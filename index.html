@@ -1,97 +1,4 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <title>Roue Allotrope - Jeu 100% gagnant</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #111;
-      color: #f8f8f8;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 480px;
-      width: 100%;
-      padding: 16px;
-      text-align: center;
-      background: #181818;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
-    }
-
-    #wheelCanvas {
-      display: block;
-      margin: 0 auto;
-      border-radius: 50%;
-      background: #111;
-    }
-
-    .pointer {
-      width: 0;
-      height: 0;
-      border-left: 16px solid transparent;
-      border-right: 16px solid transparent;
-      border-bottom: 26px solid #f5c242;
-      margin: 12px auto 4px;
-    }
-
-    #qrcode {
-      margin-top: 16px;
-    }
-
-    .highlight {
-      color: #f5c242;
-      font-weight: 600;
-    }
-
-    button {
-      margin-top: 12px;
-      padding: 10px 20px;
-      font-size: 1rem;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      background: #f5c242;
-      color: #111;
-      font-weight: 600;
-      box-shadow: 0 6px 16px rgba(245, 194, 66, 0.5);
-    }
-    button:disabled {
-      opacity: 0.4;
-      cursor: default;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Allotrope</h1>
-    <h2>Roue 100% gagnante</h2>
-
-    <div class="pointer"></div>
-    <canvas id="wheelCanvas" width="320" height="320"></canvas>
-
-    <button id="spinBtn">Lancer la roue</button>
-
-    <div id="result"></div>
-    <div id="qrcode"></div>
-
-    <div class="details">
-      Scanne le QR, lance la roue et montre ton gain à ton serveur.<br>
-      <span class="highlight">1 participation par personne.</span>
-    </div>
-  </div>
-
-  <script>
+<script>
     const canvas = document.getElementById("wheelCanvas");
     const ctx = canvas.getContext("2d");
     const spinBtn = document.getElementById("spinBtn");
@@ -115,6 +22,11 @@
       return 'xxxx-xxxx'.replace(/[x]/g, () =>
         Math.floor(Math.random() * 16).toString(16)
       );
+    }
+
+    // 🔒 Empêche l'accès à la roue si l'utilisateur n'est pas passé par avis_gate.html
+    if (!localStorage.getItem("passed_avis_gate")) {
+        window.location.href = "avis_gate.html";
     }
 
     // Vérifier si le client a déjà joué
@@ -169,7 +81,6 @@
       const words = text.split(" ");
       let line = "";
       let lineCount = 0;
-
       for (let n = 0; n < words.length; n++) {
         const testLine = line + words[n] + " ";
         const metrics = context.measureText(testLine);
@@ -177,9 +88,7 @@
           context.fillText(line, x - metrics.width/2, y + lineCount * lineHeight);
           line = words[n] + " ";
           lineCount++;
-        } else {
-          line = testLine;
-        }
+        } else line = testLine;
       }
       context.fillText(line, x - context.measureText(line).width/2, y + lineCount * lineHeight);
     }
@@ -211,7 +120,6 @@
       const prize = prizes[index].label;
       const uid = generateUID();
 
-      // Sauvegarde
       localStorage.setItem("allotrope_prize", prize);
       localStorage.setItem("allotrope_uid", uid);
 
@@ -236,6 +144,9 @@
           isSpinning = false;
           resultDiv.innerHTML = "Vous avez gagné : <span class='highlight'>" + prize + "</span> 🎉";
           generateValidationQR(prize, uid);
+
+          // 🔓 Autorise la roue pour une prochaine utilisation
+          localStorage.removeItem("passed_avis_gate");
         }
       }
 
@@ -244,6 +155,4 @@
 
     spinBtn.addEventListener("click", spinWheel);
     drawWheel();
-  </script>
-</body>
-</html>
+</script>
