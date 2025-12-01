@@ -1,10 +1,133 @@
-<script>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Roue Allotrope - Jeu 100% gagnant</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: #f8f8f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 480px;
+      width: 100%;
+      padding: 16px;
+      text-align: center;
+      background: #181818;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+
+    h2 {
+      font-size: 0.9rem;
+      font-weight: 400;
+      margin-top: 0;
+      margin-bottom: 1rem;
+      color: #f5c242;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #wheelCanvas {
+      display: block;
+      margin: 0 auto;
+      background: #111;
+      border-radius: 50%;
+    }
+
+    .pointer {
+      width: 0;
+      height: 0;
+      border-left: 16px solid transparent;
+      border-right: 16px solid transparent;
+      border-bottom: 26px solid #f5c242;
+      margin: 12px auto 4px;
+    }
+
+    button {
+      margin-top: 12px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #f5c242;
+      color: #111;
+      font-weight: 600;
+      box-shadow: 0 6px 16px rgba(245, 194, 66, 0.5);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
+    }
+
+    button:not(:disabled):active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 8px rgba(245, 194, 66, 0.35);
+    }
+
+    #result {
+      margin-top: 16px;
+      font-size: 1.1rem;
+      min-height: 1.4em;
+    }
+
+    .details {
+      margin-top: 10px;
+      font-size: 0.8rem;
+      color: #aaa;
+      line-height: 1.4;
+    }
+
+    .highlight {
+      color: #f5c242;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Allotrope</h1>
+    <h2>Roue 100% gagnante</h2>
+
+    <div class="pointer"></div>
+    <canvas id="wheelCanvas" width="320" height="320"></canvas>
+
+    <button id="spinBtn">Lancer la roue</button>
+
+    <div id="result"></div>
+
+    <div class="details">
+      Scanne le QR, lance la roue et montre ton gain à ton serveur.<br />
+      <span class="highlight">1 participation par personne.</span> Offre valable sur place, non cumulable.
+    </div>
+  </div>
+
+  <script>
     const canvas = document.getElementById("wheelCanvas");
     const ctx = canvas.getContext("2d");
     const spinBtn = document.getElementById("spinBtn");
     const resultDiv = document.getElementById("result");
-    const qrcodeDiv = document.getElementById("qrcode");
 
+    // Définition des gains + poids (probabilités)
     const prizes = [
       { label: "Tiramisu", weight: 10 },
       { label: "Panna cotta", weight: 25 },
@@ -15,65 +138,59 @@
       { label: "Un shot offert", weight: 40 }
     ];
 
-    const colors = ["#f5c242","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#af7aa1"];
+    const colors = [
+      "#f5c242",
+      "#f28e2b",
+      "#e15759",
+      "#76b7b2",
+      "#59a14f",
+      "#edc948",
+      "#af7aa1"
+    ];
 
-    // UID
-    function generateUID() {
-      return 'xxxx-xxxx'.replace(/[x]/g, () =>
-        Math.floor(Math.random() * 16).toString(16)
-      );
-    }
-
-    // 🔒 Empêche l'accès à la roue si l'utilisateur n'est pas passé par avis_gate.html
-    if (!localStorage.getItem("passed_avis_gate")) {
-        window.location.href = "avis_gate.html";
-    }
-
-    // Vérifier si le client a déjà joué
-    const savedPrize = localStorage.getItem("allotrope_prize");
-    const savedUID = localStorage.getItem("allotrope_uid");
-
-    if (savedPrize && savedUID) {
-      spinBtn.disabled = true;
-      resultDiv.innerHTML = "Vous avez déjà joué 🎉<br><br>Gain : <span class='highlight'>" + savedPrize + "</span>";
-      generateValidationQR(savedPrize, savedUID);
-    }
-
-    // --- ROULETTE ---
     const size = canvas.width;
     const radius = size / 2;
     const sliceAngle = (2 * Math.PI) / prizes.length;
+
     let currentAngle = 0;
     let isSpinning = false;
 
     function drawWheel(angleOffset = 0) {
       ctx.clearRect(0, 0, size, size);
+
+      // Déplacement du centre
       ctx.save();
       ctx.translate(radius, radius);
       ctx.rotate(angleOffset);
 
       for (let i = 0; i < prizes.length; i++) {
-        const start = i * sliceAngle;
-        const end = start + sliceAngle;
+        const startAngle = i * sliceAngle;
+        const endAngle = startAngle + sliceAngle;
 
+        // Secteur
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius - 4, start, end);
+        ctx.arc(0, 0, radius - 4, startAngle, endAngle);
         ctx.closePath();
-        ctx.fillStyle = colors[i];
+        ctx.fillStyle = colors[i % colors.length];
         ctx.fill();
         ctx.strokeStyle = "#111";
+        ctx.lineWidth = 2;
         ctx.stroke();
 
+        // Texte
         ctx.save();
-        ctx.rotate(start + sliceAngle / 2);
-        ctx.translate(radius * 0.65, 0);
-        ctx.rotate(Math.PI / 2);
         ctx.fillStyle = "#111";
-        ctx.font = "bold 13px system-ui";
-        wrapText(ctx, prizes[i].label, 0, 0, 80, 14);
+        ctx.font = "bold 13px system-ui, sans-serif";
+        const textAngle = startAngle + sliceAngle / 2;
+        ctx.rotate(textAngle);
+        ctx.translate(radius * 0.68, 0);
+        ctx.rotate(Math.PI / 2);
+        const text = prizes[i].label;
+        wrapText(ctx, text, 0, 0, 80, 14);
         ctx.restore();
       }
+
       ctx.restore();
     }
 
@@ -81,32 +198,33 @@
       const words = text.split(" ");
       let line = "";
       let lineCount = 0;
+
       for (let n = 0; n < words.length; n++) {
         const testLine = line + words[n] + " ";
         const metrics = context.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-          context.fillText(line, x - metrics.width/2, y + lineCount * lineHeight);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          context.fillText(line, x - metrics.width / 2, y + lineCount * lineHeight);
           line = words[n] + " ";
           lineCount++;
-        } else line = testLine;
+        } else {
+          line = testLine;
+        }
       }
-      context.fillText(line, x - context.measureText(line).width/2, y + lineCount * lineHeight);
+      const finalMetrics = context.measureText(line);
+      context.fillText(line, x - finalMetrics.width / 2, y + lineCount * lineHeight);
     }
 
+    // Tirage pondéré
     function pickPrizeIndex() {
-      let total = prizes.reduce((s, p) => s + p.weight, 0);
-      let r = Math.random() * total;
+      const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
+      let r = Math.random() * totalWeight;
       for (let i = 0; i < prizes.length; i++) {
         if (r < prizes[i].weight) return i;
         r -= prizes[i].weight;
       }
+      // Sécurité (ne devrait pas arriver)
       return prizes.length - 1;
-    }
-
-    function generateValidationQR(prize, uid) {
-      qrcodeDiv.innerHTML = "";
-      const url = window.location.origin + "/validate.html?gain=" + encodeURIComponent(prize) + "&uid=" + uid;
-      new QRCode(qrcodeDiv, { text: url, width: 140, height: 140 });
     }
 
     function spinWheel() {
@@ -116,37 +234,39 @@
       spinBtn.disabled = true;
       resultDiv.textContent = "";
 
-      const index = pickPrizeIndex();
-      const prize = prizes[index].label;
-      const uid = generateUID();
+      const prizeIndex = pickPrizeIndex();
 
-      localStorage.setItem("allotrope_prize", prize);
-      localStorage.setItem("allotrope_uid", uid);
+      const extraTurns = 5; // tours complets pour l'animation
+      const finalSliceCenter = prizeIndex * sliceAngle + sliceAngle / 2;
 
-      const extra = 5 * 2 * Math.PI;
-      const target = extra + (3 * Math.PI) / 2 - (index * sliceAngle + sliceAngle / 2);
-      const start = currentAngle;
-      const diff = target - start;
-      const duration = 4500;
+      // On veut que le centre du gain soit en haut (angle -Math.PI/2)
+      const targetAngle =
+        extraTurns * 2 * Math.PI + (3 * Math.PI) / 2 - finalSliceCenter;
+
+      const startAngle = currentAngle;
+      const diff = targetAngle - startAngle;
+      const duration = 4500; // ms
       const startTime = performance.now();
 
-      function animate(t) {
-        const elapsed = t - startTime;
-        const q = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - q, 3);
+      function animate(time) {
+        const elapsed = time - startTime;
+        const t = Math.min(elapsed / duration, 1);
+        // easeOutCubic
+        const eased = 1 - Math.pow(1 - t, 3);
 
-        currentAngle = start + diff * ease;
+        currentAngle = startAngle + diff * eased;
         drawWheel(currentAngle);
 
-        if (q < 1) {
+        if (t < 1) {
           requestAnimationFrame(animate);
         } else {
           isSpinning = false;
-          resultDiv.innerHTML = "Vous avez gagné : <span class='highlight'>" + prize + "</span> 🎉";
-          generateValidationQR(prize, uid);
-
-          // 🔓 Autorise la roue pour une prochaine utilisation
-          localStorage.removeItem("passed_avis_gate");
+          spinBtn.disabled = false;
+          const prize = prizes[prizeIndex].label;
+          resultDiv.innerHTML =
+            "Vous avez gagné : <span class=\"highlight\">" +
+            prize +
+            "</span> 🎉";
         }
       }
 
@@ -154,5 +274,9 @@
     }
 
     spinBtn.addEventListener("click", spinWheel);
-    drawWheel();
-</script>
+
+    // Premier dessin
+    drawWheel(currentAngle);
+  </script>
+</body>
+</html>
