@@ -1,162 +1,116 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Allotrope - Roue 100% gagnante</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #111;
-      color: #f8f8f8;
-      text-align: center;
-      margin: 0;
-      padding: 20px;
-    }
+<meta charset="UTF-8" />
+<title>Avis Allotrope</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    background: #111;
+    color: white;
+    font-family: system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+  }
+  .container {
+    text-align: center;
+    background: #181818;
+    padding: 25px;
+    margin-top: 40px;
+    width: 90%;
+    max-width: 420px;
+    border-radius: 16px;
+  }
+  h1 { color: #f5c242; }
 
-    canvas {
-      background: #222;
-      border-radius: 50%;
-      margin-top: 20px;
-    }
+  .smileys {
+    display: flex;
+    justify-content: space-around;
+    margin: 28px 0;
+    font-size: 42px;
+    cursor: pointer;
+  }
 
-    button {
-      margin-top: 20px;
-      padding: 12px 22px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
-      background: #f5c242;
-      color: #111;
-    }
-
-    .highlight {
-      color: #f5c242;
-      font-weight: bold;
-    }
-  </style>
+  #formZone { display: none; margin-top: 20px; }
+  textarea {
+    width: 95%;
+    height: 120px;
+    border-radius: 8px;
+    border: none;
+    padding: 12px;
+    font-size: 1rem;
+    resize: none;
+  }
+  button {
+    background: #f5c242;
+    color: #111;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+</style>
 </head>
+
 <body>
+<div class="container">
+  <h1>Laissez-nous votre avis</h1>
+  <p>Votre avis est obligatoire pour accéder à la roue 🎯</p>
 
-<h1>Allotrope</h1>
-<h2>🎡 Roue 100% gagnante</h2>
+  <div class="smileys">
+    <span onclick="selectMood('bad')">😡</span>
+    <span onclick="selectMood('meh')">😐</span>
+    <span onclick="selectMood('good')">😄</span>
+  </div>
 
-<canvas id="wheelCanvas" width="320" height="320"></canvas>
+  <!-- Formulaire interne pour avis négatif / moyen -->
+  <div id="formZone">
+    <form id="feedbackForm" action="https://formspree.io/f/mzzngdlo" method="POST">
+      <input type="hidden" name="sentiment" id="sentiment" />
 
-<button id="spinBtn">Lancer la roue</button>
+      <textarea name="message" placeholder="Votre message..." required></textarea>
 
-<div id="result" style="margin-top:20px; font-size:1.2rem"></div>
+      <button type="submit">Envoyer</button>
+    </form>
+  </div>
+
+</div>
 
 <script>
-/* 🔒 1 — Anti-rejeu */
-if (localStorage.getItem("hasPlayed") === "true") {
-  document.getElementById("spinBtn").disabled = true;
-  document.getElementById("spinBtn").innerText = "Vous avez déjà joué 🎁";
-}
+function selectMood(mood) {
 
-/* 🔒 2 — Avis obligatoire */
-document.getElementById("spinBtn").addEventListener("click", () => {
-  if (!localStorage.getItem("hasLeftReview")) {
-    window.location.href = "avis_allotrope.html";
+  if (mood === "good") {
+    // Avis Google
+    window.location.href = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+
+    // Puis après 4 sec → roue finale
+    setTimeout(() => window.location.href = "gain.html", 4000);
     return;
   }
-  spinWheel();
+
+  // Pour avis moyens / négatifs : formulaire interne
+  document.getElementById("formZone").style.display = "block";
+  document.getElementById("sentiment").value = mood;
+}
+
+// Après soumission du formulaire interne :
+const form = document.getElementById("feedbackForm");
+form.addEventListener("submit", function (e) {
+  e.preventDefault();
+
+  fetch(form.action, {
+    method: "POST",
+    body: new FormData(form),
+    headers: { "Accept": "application/json" }
+  }).then(() => {
+    window.location.href = "gain.html";
+  });
 });
-
-/* 🎡 3 — Configuration de la roue */
-const canvas = document.getElementById("wheelCanvas");
-const ctx = canvas.getContext("2d");
-const size = canvas.width;
-const radius = size / 2;
-
-const prizes = [
-  { label: "Tiramisu", weight: 10 },
-  { label: "Panna cotta", weight: 25 },
-  { label: "Cocktail du moment", weight: 4 },
-  { label: "Vin 12 cl", weight: 10 },
-  { label: "Bière 25 cl", weight: 10 },
-  { label: "-10% sur la note", weight: 1 },
-  { label: "Shot offert", weight: 40 }
-];
-
-const colors = ["#f5c242","#ff8c42","#e05d5d","#5fb49c","#499f68","#ffc857","#9c6db0"];
-
-const sliceAngle = (2 * Math.PI) / prizes.length;
-let currentAngle = 0;
-
-function drawWheel(angle=0) {
-  ctx.clearRect(0,0,size,size);
-  ctx.save();
-  ctx.translate(radius,radius);
-  ctx.rotate(angle);
-
-  for (let i=0; i<prizes.length; i++){
-    const start = i*sliceAngle;
-    ctx.beginPath();
-    ctx.moveTo(0,0);
-    ctx.arc(0,0,radius,start,start+sliceAngle);
-    ctx.fillStyle = colors[i];
-    ctx.fill();
-
-    ctx.save();
-    ctx.rotate(start + sliceAngle/2);
-    ctx.translate(radius*0.65,0);
-    ctx.rotate(Math.PI/2);
-    ctx.fillStyle="#111";
-    ctx.font="12px system-ui";
-    ctx.fillText(prizes[i].label,-40,0);
-    ctx.restore();
-  }
-  ctx.restore();
-}
-drawWheel();
-
-/* 🎯 Tirage pondéré */
-function pickPrizeIndex(){
-  const total = prizes.reduce((a,b)=>a+b.weight,0);
-  let r = Math.random()*total;
-  for(let i=0;i<prizes.length;i++){
-    if(r < prizes[i].weight) return i;
-    r -= prizes[i].weight;
-  }
-}
-
-/* 🎡 Animation de la roue */
-function spinWheel(){
-  const index = pickPrizeIndex();
-  const finalAngle = (Math.PI*3/2) - (index*sliceAngle + sliceAngle/2) + 2*Math.PI*5;
-
-  const duration = 4000;
-  const start = performance.now();
-
-  function animate(t){
-    const elapsed = t - start;
-    const progress = Math.min(elapsed/duration, 1);
-    const eased = 1 - Math.pow(1-progress, 3);
-    currentAngle = eased * finalAngle;
-    drawWheel(currentAngle);
-
-    if(progress < 1) requestAnimationFrame(animate);
-    else finalize(index);
-  }
-  requestAnimationFrame(animate);
-}
-
-/* 🎁 Affichage du gain */
-function finalize(index){
-  const prize = prizes[index].label;
-
-  localStorage.setItem("hasPlayed","true");
-
-  const resultDiv = document.getElementById("result");
-  const qrLink = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" + encodeURIComponent(prize);
-
-  resultDiv.innerHTML =
-    "Vous avez gagné : <span class='highlight'>" + prize +
-    "</span> 🎉<br><br><img src='" + qrLink + "'>";
-}
 </script>
 
 </body>

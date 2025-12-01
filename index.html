@@ -2,264 +2,54 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Roue Allotrope - Jeu 100% gagnant</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+  <title>Allotrope – Jeu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
       font-family: system-ui, sans-serif;
       background: #111;
-      color: #f8f8f8;
+      color: #fff;
       margin: 0;
       padding: 0;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       min-height: 100vh;
     }
     .container {
-      max-width: 480px;
-      width: 100%;
-      padding: 16px;
       text-align: center;
       background: #181818;
+      padding: 25px;
       border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      width: 90%;
+      max-width: 420px;
     }
-    h1 { margin-bottom: 0; }
-    h2 {
-      margin-top: 4px;
-      color: #f5c242;
-      font-size: 0.9rem;
-    }
-    #wheelCanvas {
-      display: block;
-      margin: 0 auto;
-      background: #111;
-      border-radius: 50%;
-    }
-    .pointer {
-      width: 0;
-      height: 0;
-      border-left: 16px solid transparent;
-      border-right: 16px solid transparent;
-      border-bottom: 26px solid #f5c242;
-      margin: 12px auto 4px;
-    }
-    #qrcode { margin-top: 16px; }
-    .highlight {
-      color: #f5c242;
-      font-weight: 600;
-    }
+    h1 { margin-bottom: 4px; }
+    h2 { color: #f5c242; margin-top: 0; }
     button {
-      margin-top: 12px;
-      padding: 10px 20px;
-      font-size: 1rem;
-      border-radius: 999px;
-      border: none;
-      cursor: pointer;
       background: #f5c242;
       color: #111;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      cursor: pointer;
       font-weight: 600;
-      box-shadow: 0 6px 16px rgba(245, 194, 66, 0.5);
-    }
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
     }
   </style>
 </head>
 
 <body>
-<div class="container">
-  <h1>Allotrope</h1>
-  <h2>Roue 100% gagnante</h2>
+  <div class="container">
+    <h1>Allotrope</h1>
+    <h2>Roue 100% gagnante 🎁</h2>
 
-  <div class="pointer"></div>
-  <canvas id="wheelCanvas" width="320" height="320"></canvas>
+    <p>Clique pour participer :</p>
 
-  <button id="spinBtn">Lancer la roue</button>
+    <button onclick="window.location.href='avis_allotrope.html'">
+      Lancer la roue
+    </button>
 
-  <div id="result"></div>
-
-  <div id="qrcode"></div>
-
-  <div class="details" style="margin-top:10px;color:#aaa;">
-    1 participation par personne • Présente ton gain au staff
   </div>
-</div>
-
-<script>
-document.addEventListener("DOMContentLoaded", function () {
-
-  const canvas = document.getElementById("wheelCanvas");
-  const ctx = canvas.getContext("2d");
-  const spinBtn = document.getElementById("spinBtn");
-  const resultDiv = document.getElementById("result");
-  const qrcodeDiv = document.getElementById("qrcode");
-
-  const prizes = [
-    { label: "Tiramisu", weight: 10 },
-    { label: "Panna cotta", weight: 25 },
-    { label: "Cocktail du moment", weight: 4 },
-    { label: "Verre de vin 12 cl", weight: 10 },
-    { label: "Bière 25 cl", weight: 10 },
-    { label: "-10% sur la note", weight: 1 },
-    { label: "Un shot offert", weight: 40 }
-  ];
-  const colors = ["#f5c242","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#af7aa1"];
-
-  function generateUID() {
-    return 'xxxx-xxxx'.replace(/[x]/g, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    );
-  }
-
-  const savedPrize = localStorage.getItem("allotrope_prize");
-  const savedUID = localStorage.getItem("allotrope_uid");
-
-  if (savedPrize && savedUID) {
-    spinBtn.disabled = true;
-    resultDiv.innerHTML = "Vous avez déjà joué 🎉<br><br>Gain : <span class='highlight'>" + savedPrize + "</span>";
-    generateValidationQR(savedPrize, savedUID);
-  }
-
-  const size = canvas.width;
-  const radius = size / 2;
-  const sliceAngle = (2 * Math.PI) / prizes.length;
-
-  let currentAngle = 0;
-  let isSpinning = false;
-
-  function drawWheel(angleOffset = 0) {
-    ctx.clearRect(0, 0, size, size);
-    ctx.save();
-    ctx.translate(radius, radius);
-    ctx.rotate(angleOffset);
-
-    for (let i = 0; i < prizes.length; i++) {
-      const start = i * sliceAngle;
-      const end = start + sliceAngle;
-
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, radius - 4, start, end);
-      ctx.closePath();
-      ctx.fillStyle = colors[i];
-      ctx.fill();
-      ctx.strokeStyle = "#111";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.save();
-      ctx.rotate(start + sliceAngle / 2);
-      ctx.translate(radius * 0.65, 0);
-      ctx.rotate(Math.PI / 2);
-      ctx.fillStyle = "#111";
-      ctx.font = "bold 13px system-ui";
-      wrapText(ctx, prizes[i].label, 0, 0, 80, 14);
-      ctx.restore();
-    }
-
-    ctx.restore();
-  }
-
-  function wrapText(context, text, x, y, maxWidth, lineHeight) {
-    const words = text.split(" ");
-    let line = "";
-    let lineCount = 0;
-
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + words[n] + " ";
-      const metrics = context.measureText(testLine);
-      const testWidth = metrics.width;
-      if (testWidth > maxWidth && n > 0) {
-        context.fillText(line, x - metrics.width / 2, y + lineCount * lineHeight);
-        line = words[n] + " ";
-        lineCount++;
-      } else {
-        line = testLine;
-      }
-    }
-    const finalMetrics = context.measureText(line);
-    context.fillText(line, x - finalMetrics.width / 2, y + lineCount * lineHeight);
-  }
-
-  function pickPrizeIndex() {
-    const total = prizes.reduce((sum, p) => sum + p.weight, 0);
-    let r = Math.random() * total;
-    for (let i = 0; i < prizes.length; i++) {
-      if (r < prizes[i].weight) return i;
-      r -= prizes[i].weight;
-    }
-    return prizes.length - 1;
-  }
-
-  function generateValidationQR(prize, uid) {
-    qrcodeDiv.innerHTML = "";
-    const base = window.location.origin + "/Allotrope/";
-    const url = base + "validate.html?gain=" + encodeURIComponent(prize) + "&uid=" + uid;
-
-    new QRCode(qrcodeDiv, {
-      text: url,
-      width: 140,
-      height: 140
-    });
-  }
-
-  function spinWheel() {
-    if (isSpinning) return;
-
-    isSpinning = true;
-    spinBtn.disabled = true;
-    resultDiv.textContent = "";
-
-    const index = pickPrizeIndex();
-    const prize = prizes[index].label;
-    const uid = generateUID();
-
-    localStorage.setItem("allotrope_prize", prize);
-    localStorage.setItem("allotrope_uid", uid);
-
-    const extra = 5 * 2 * Math.PI;
-    const finalCenter = index * sliceAngle + sliceAngle / 2;
-    const target = extra + (3 * Math.PI) / 2 - finalCenter;
-
-    const start = currentAngle;
-    const diff = target - start;
-    const duration = 4500;
-    const startTime = performance.now();
-
-    function animate(t) {
-      const elapsed = t - startTime;
-      const q = Math.min(elapsed / duration, 1);
-      const ease = 1 - Math.pow(1 - q, 3);
-
-      currentAngle = start + diff * ease;
-      drawWheel(currentAngle);
-
-      if (q < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        isSpinning = false;
-        spinBtn.disabled = true;
-
-        resultDiv.innerHTML =
-          "Vous avez gagné : <span class='highlight'>" + prize + "</span> 🎉";
-
-        generateValidationQR(prize, uid);
-      }
-    }
-
-    requestAnimationFrame(animate);
-  }
-
-  spinBtn.addEventListener("click", spinWheel);
-  drawWheel();
-
-});
-</script>
-
 </body>
 </html>
