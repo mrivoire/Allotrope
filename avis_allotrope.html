@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Avis Allotrope</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: #f8f8f8;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 480px;
+      width: 100%;
+      padding: 20px;
+      text-align: center;
+      background: #181818;
+      border-radius: 16px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+
+    h2 {
+      font-size: 0.9rem;
+      font-weight: 400;
+      margin-top: 0;
+      margin-bottom: 1.5rem;
+      color: #f5c242;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .smileys {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .smiley {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.15s ease, border 0.15s;
+      border: 2px solid transparent;
+    }
+
+    .smiley.bad { background: #3a1115; }
+    .smiley.medium { background: #3a3211; }
+    .smiley.good { background: #163a24; }
+
+    .smiley.selected {
+      border-color: #f5c242;
+      box-shadow: 0 0 0 2px rgba(245, 194, 66, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .hint {
+      font-size: 0.9rem;
+      color: #ccc;
+      min-height: 1.2em;
+      margin-bottom: 8px;
+    }
+
+    /* Formulaire interne */
+    form.feedback-form {
+      margin-top: 10px;
+      text-align: left;
+      display: none; /* affiché seulement pour 😡 / 😕 */
+    }
+
+    .field-label {
+      font-size: 0.85rem;
+      margin-bottom: 4px;
+      color: #ddd;
+    }
+
+    .stars {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .star {
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: #555;
+      transition: color 0.1s;
+    }
+
+    .star.active {
+      color: #f5c242;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 90px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #111;
+      color: #f8f8f8;
+      padding: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      resize: vertical;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+
+    button {
+      margin-top: 4px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      background: #f5c242;
+      color: #111;
+      font-weight: 600;
+      box-shadow: 0 6px 16px rgba(245, 194, 66, 0.5);
+      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
+      width: 100%;
+    }
+
+    button:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 8px rgba(245, 194, 66, 0.35);
+    }
+
+    .note {
+      margin-top: 12px;
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.4;
+    }
+
+    a.link-google {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 10px 18px;
+      background: #1db954;
+      color: #111;
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 999px;
+      box-shadow: 0 6px 16px rgba(29, 185, 84, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Allotrope</h1>
+    <h2>Donnez votre avis</h2>
+
+    <div class="smileys">
+      <div class="smiley bad" data-type="bad" title="Pas content">😡</div>
+      <div class="smiley medium" data-type="medium" title="Pas mal">😕</div>
+      <div class="smiley good" data-type="good" title="Très content">😀</div>
+    </div>
+
+    <div class="hint" id="hint"></div>
+
+    <!-- Formulaire interne (uniquement pour 😡 / 😕) -->
+    <form
+      class="feedback-form"
+      id="feedbackForm"
+      action="https://docs.google.com/forms/d/e/1FAIpQLSdL7tFX3MQz1V8l01z2iHB2R_o1w4wG300KRtNzhonCrk_r7A/viewform?usp=header"
+      method="POST"
+    >
+      <!-- Ces champs seront envoyés par mail -->
+      <input type="hidden" name="ressenti" id="hiddenType" />
+      <input type="hidden" name="note_etoiles" id="hiddenStars" />
+
+      <div class="field">
+        <div class="field-label">
+          Note (interne, ne sera pas publiée sur Google)
+        </div>
+        <div class="stars" id="stars">
+          <span class="star" data-value="1">★</span>
+          <span class="star" data-value="2">★</span>
+          <span class="star" data-value="3">★</span>
+          <span class="star" data-value="4">★</span>
+          <span class="star" data-value="5">★</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="field-label">Dites-nous ce que vous n’avez pas aimé :</div>
+        <textarea
+          id="comment"
+          name="commentaire"
+          placeholder="Votre message..."
+          required
+        ></textarea>
+      </div>
+
+      <button type="submit">Envoyer mon avis interne</button>
+
+      <div class="note">
+        Cet avis est envoyé uniquement à l'équipe Allotrope, par email.<br />
+        Il ne sera pas publié sur Google.
+      </div>
+    </form>
+
+    <!-- Bloc pour Google avis (uniquement pour 😀) -->
+    <div id="googleBox" style="display:none; margin-top: 10px;">
+      <div class="note">
+        Merci beaucoup ! Si vous avez passé un bon moment, vous pouvez nous soutenir avec un avis public :
+      </div>
+      <a
+        class="link-google"
+        id="googleLink"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Laisser un avis sur Google ⭐
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const smileys = document.querySelectorAll(".smiley");
+    const hint = document.getElementById("hint");
+    const feedbackForm = document.getElementById("feedbackForm");
+    const stars = document.querySelectorAll(".star");
+    const comment = document.getElementById("comment");
+    const googleBox = document.getElementById("googleBox");
+    const googleLink = document.getElementById("googleLink");
+    const hiddenType = document.getElementById("hiddenType");
+    const hiddenStars = document.getElementById("hiddenStars");
+
+    // A REMPLACER : ton lien Google Avis
+    const GOOGLE_AVIS_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+    googleLink.href = GOOGLE_AVIS_URL;
+
+    let selectedType = null;
+    let selectedStars = 0;
+
+    smileys.forEach(smiley => {
+      smiley.addEventListener("click", () => {
+        const type = smiley.getAttribute("data-type");
+        selectedType = type;
+
+        // reset visuel
+        smileys.forEach(s => s.classList.remove("selected"));
+        smiley.classList.add("selected");
+
+        if (type === "good") {
+          // Avis positif -> vers Google
+          feedbackForm.style.display = "none";
+          googleBox.style.display = "block";
+          hint.textContent =
+            "Merci ! Vous pouvez nous laisser un avis public sur Google.";
+        } else {
+          // Avis interne (négatif / moyen)
+          googleBox.style.display = "none";
+          feedbackForm.style.display = "block";
+          hint.textContent =
+            type === "bad"
+              ? "Nous sommes désolés. Dites-nous ce que vous n'avez pas aimé."
+              : "Merci, dites-nous ce que nous pouvons améliorer.";
+        }
+      });
+    });
+
+    stars.forEach(star => {
+      star.addEventListener("click", () => {
+        selectedStars = parseInt(star.getAttribute("data-value"), 10);
+        stars.forEach(s => {
+          const val = parseInt(s.getAttribute("data-value"), 10);
+          if (val <= selectedStars) {
+            s.classList.add("active");
+          } else {
+            s.classList.remove("active");
+          }
+        });
+      });
+    });
+
+    // Avant l'envoi, on remplit les champs cachés
+    feedbackForm.addEventListener("submit", (e) => {
+      if (!selectedType || (selectedType !== "bad" && selectedType !== "medium")) {
+        // Normalement le formulaire n'est visible que pour bad/medium
+        alert("Choisissez d'abord un smiley (pas content ou pas mal).");
+        e.preventDefault();
+        return;
+      }
+
+      const typeLabel = selectedType === "bad" ? "Pas content" : "Pas mal";
+      hiddenType.value = typeLabel;
+      hiddenStars.value = selectedStars ? selectedStars : "non renseignée";
+
+      // Ensuite le formulaire est envoyé normalement à Formspree
+      // tu recevras un mail avec : ressenti, note_etoiles, commentaire
+    });
+  </script>
+</body>
+</html>
