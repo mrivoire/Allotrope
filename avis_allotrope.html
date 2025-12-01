@@ -2,265 +2,162 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>Roue Allotrope - Jeu 100% gagnant</title>
+  <title>Allotrope - Roue 100% gagnante</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
     body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: system-ui, sans-serif;
       background: #111;
       color: #f8f8f8;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      max-width: 480px;
-      width: 100%;
-      padding: 16px;
       text-align: center;
-      background: #181818;
-      border-radius: 16px;
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      margin: 0;
+      padding: 20px;
     }
 
-    h1 {
-      font-size: 1.6rem;
-      margin-bottom: 0.25rem;
-    }
-
-    h2 {
-      font-size: 0.9rem;
-      font-weight: 400;
-      margin-top: 0;
-      margin-bottom: 1rem;
-      color: #f5c242;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    #wheelCanvas {
-      display: block;
-      margin: 0 auto;
-      background: #111;
+    canvas {
+      background: #222;
       border-radius: 50%;
-    }
-
-    .pointer {
-      width: 0;
-      height: 0;
-      border-left: 16px solid transparent;
-      border-right: 16px solid transparent;
-      border-bottom: 26px solid #f5c242;
-      margin: 12px auto 4px;
+      margin-top: 20px;
     }
 
     button {
-      margin-top: 12px;
-      padding: 10px 20px;
-      font-size: 1rem;
+      margin-top: 20px;
+      padding: 12px 22px;
+      font-size: 1.2rem;
+      font-weight: 700;
       border-radius: 999px;
       border: none;
       cursor: pointer;
       background: #f5c242;
       color: #111;
-      font-weight: 600;
-      box-shadow: 0 6px 16px rgba(245, 194, 66, 0.5);
-      transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.2s;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: default;
-      box-shadow: none;
-      transform: none;
-    }
-
-    button:not(:disabled):active {
-      transform: translateY(1px);
-      box-shadow: 0 3px 8px rgba(245, 194, 66, 0.35);
-    }
-
-    #result {
-      margin-top: 16px;
-      font-size: 1.1rem;
-      min-height: 1.4em;
-    }
-
-    .details {
-      margin-top: 10px;
-      font-size: 0.8rem;
-      color: #aaa;
-      line-height: 1.4;
     }
 
     .highlight {
       color: #f5c242;
-      font-weight: 600;
+      font-weight: bold;
     }
   </style>
 </head>
-
 <body>
 
-  <div class="container">
-    <h1>Allotrope</h1>
-    <h2>Roue 100% gagnante</h2>
+<h1>Allotrope</h1>
+<h2>🎡 Roue 100% gagnante</h2>
 
-    <div class="pointer"></div>
-    <canvas id="wheelCanvas" width="320" height="320"></canvas>
+<canvas id="wheelCanvas" width="320" height="320"></canvas>
 
-    <button id="spinBtn">Lancer la roue</button>
+<button id="spinBtn">Lancer la roue</button>
 
-    <div id="result"></div>
+<div id="result" style="margin-top:20px; font-size:1.2rem"></div>
 
-    <div class="details">
-      Scanne le QR, lance la roue et montre ton gain à ton serveur.<br />
-      <span class="highlight">1 participation par personne.</span> Offre valable sur place, non cumulable.
-    </div>
-  </div>
+<script>
+/* 🔒 1 — Anti-rejeu */
+if (localStorage.getItem("hasPlayed") === "true") {
+  document.getElementById("spinBtn").disabled = true;
+  document.getElementById("spinBtn").innerText = "Vous avez déjà joué 🎁";
+}
 
-  <script>
-  document.addEventListener("DOMContentLoaded", function () {
+/* 🔒 2 — Avis obligatoire */
+document.getElementById("spinBtn").addEventListener("click", () => {
+  if (!localStorage.getItem("hasLeftReview")) {
+    window.location.href = "avis_allotrope.html";
+    return;
+  }
+  spinWheel();
+});
 
-    const canvas = document.getElementById("wheelCanvas");
-    const ctx = canvas.getContext("2d");
-    const spinBtn = document.getElementById("spinBtn");
-    const resultDiv = document.getElementById("result");
+/* 🎡 3 — Configuration de la roue */
+const canvas = document.getElementById("wheelCanvas");
+const ctx = canvas.getContext("2d");
+const size = canvas.width;
+const radius = size / 2;
 
-    const prizes = [
-      { label: "Tiramisu", weight: 10 },
-      { label: "Panna cotta", weight: 25 },
-      { label: "Cocktail du moment", weight: 4 },
-      { label: "Verre de vin 12 cl", weight: 10 },
-      { label: "Bière 25 cl", weight: 10 },
-      { label: "-10% sur la note", weight: 1 },
-      { label: "Un shot offert", weight: 40 }
-    ];
+const prizes = [
+  { label: "Tiramisu", weight: 10 },
+  { label: "Panna cotta", weight: 25 },
+  { label: "Cocktail du moment", weight: 4 },
+  { label: "Vin 12 cl", weight: 10 },
+  { label: "Bière 25 cl", weight: 10 },
+  { label: "-10% sur la note", weight: 1 },
+  { label: "Shot offert", weight: 40 }
+];
 
-    const colors = ["#f5c242","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#af7aa1"];
+const colors = ["#f5c242","#ff8c42","#e05d5d","#5fb49c","#499f68","#ffc857","#9c6db0"];
 
-    const size = canvas.width;
-    const radius = size / 2;
-    const sliceAngle = (2 * Math.PI) / prizes.length;
+const sliceAngle = (2 * Math.PI) / prizes.length;
+let currentAngle = 0;
 
-    let currentAngle = 0;
-    let isSpinning = false;
+function drawWheel(angle=0) {
+  ctx.clearRect(0,0,size,size);
+  ctx.save();
+  ctx.translate(radius,radius);
+  ctx.rotate(angle);
 
-    function drawWheel(angleOffset = 0) {
-      ctx.clearRect(0, 0, size, size);
-      ctx.save();
-      ctx.translate(radius, radius);
-      ctx.rotate(angleOffset);
+  for (let i=0; i<prizes.length; i++){
+    const start = i*sliceAngle;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,radius,start,start+sliceAngle);
+    ctx.fillStyle = colors[i];
+    ctx.fill();
 
-      for (let i = 0; i < prizes.length; i++) {
-        const startAngle = i * sliceAngle;
-        const endAngle = startAngle + sliceAngle;
+    ctx.save();
+    ctx.rotate(start + sliceAngle/2);
+    ctx.translate(radius*0.65,0);
+    ctx.rotate(Math.PI/2);
+    ctx.fillStyle="#111";
+    ctx.font="12px system-ui";
+    ctx.fillText(prizes[i].label,-40,0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+drawWheel();
 
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius - 4, startAngle, endAngle);
-        ctx.closePath();
-        ctx.fillStyle = colors[i];
-        ctx.fill();
-        ctx.strokeStyle = "#111";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+/* 🎯 Tirage pondéré */
+function pickPrizeIndex(){
+  const total = prizes.reduce((a,b)=>a+b.weight,0);
+  let r = Math.random()*total;
+  for(let i=0;i<prizes.length;i++){
+    if(r < prizes[i].weight) return i;
+    r -= prizes[i].weight;
+  }
+}
 
-        ctx.save();
-        ctx.fillStyle = "#111";
-        ctx.font = "bold 13px system-ui, sans-serif";
-        const textAngle = startAngle + sliceAngle / 2;
-        ctx.rotate(textAngle);
-        ctx.translate(radius * 0.68, 0);
-        ctx.rotate(Math.PI / 2);
-        wrapText(ctx, prizes[i].label, 0, 0, 80, 14);
-        ctx.restore();
-      }
+/* 🎡 Animation de la roue */
+function spinWheel(){
+  const index = pickPrizeIndex();
+  const finalAngle = (Math.PI*3/2) - (index*sliceAngle + sliceAngle/2) + 2*Math.PI*5;
 
-      ctx.restore();
-    }
+  const duration = 4000;
+  const start = performance.now();
 
-    function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-      const words = text.split(" ");
-      let line = "";
-      let lineCount = 0;
+  function animate(t){
+    const elapsed = t - start;
+    const progress = Math.min(elapsed/duration, 1);
+    const eased = 1 - Math.pow(1-progress, 3);
+    currentAngle = eased * finalAngle;
+    drawWheel(currentAngle);
 
-      for (let n = 0; n < words.length; n++) {
-        const testLine = line + words[n] + " ";
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > maxWidth && n > 0) {
-          ctx.fillText(line, x - metrics.width / 2, y + lineCount * lineHeight);
-          line = words[n] + " ";
-          lineCount++;
-        } else {
-          line = testLine;
-        }
-      }
+    if(progress < 1) requestAnimationFrame(animate);
+    else finalize(index);
+  }
+  requestAnimationFrame(animate);
+}
 
-      const finalMetrics = ctx.measureText(line);
-      ctx.fillText(line, x - finalMetrics.width / 2, y + lineCount * lineHeight);
-    }
+/* 🎁 Affichage du gain */
+function finalize(index){
+  const prize = prizes[index].label;
 
-    function pickPrizeIndex() {
-      const total = prizes.reduce((sum, p) => sum + p.weight, 0);
-      let r = Math.random() * total;
-      for (let i = 0; i < prizes.length; i++) {
-        if (r < prizes[i].weight) return i;
-        r -= prizes[i].weight;
-      }
-      return prizes.length - 1;
-    }
+  localStorage.setItem("hasPlayed","true");
 
-    function spinWheel() {
-      if (isSpinning) return;
+  const resultDiv = document.getElementById("result");
+  const qrLink = "https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=" + encodeURIComponent(prize);
 
-      isSpinning = true;
-      spinBtn.disabled = true;
-      resultDiv.textContent = "";
-
-      const index = pickPrizeIndex();
-      const extra = 5 * 2 * Math.PI;
-      const finalCenter = index * sliceAngle + sliceAngle / 2;
-      const target = extra + (3 * Math.PI) / 2 - finalCenter;
-
-      const start = currentAngle;
-      const diff = target - start;
-      const duration = 4500;
-      const startTime = performance.now();
-
-      function animate(t) {
-        const elapsed = t - startTime;
-        const q = Math.min(elapsed / duration, 1);
-        const ease = 1 - Math.pow(1 - q, 3);
-
-        currentAngle = start + diff * ease;
-        drawWheel(currentAngle);
-
-        if (q < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          isSpinning = false;
-          spinBtn.disabled = false;
-
-          const prize = prizes[index].label;
-          resultDiv.innerHTML =
-            "Vous avez gagné : <span class='highlight'>" + prize + "</span> 🎉";
-        }
-      }
-
-      requestAnimationFrame(animate);
-    }
-
-    spinBtn.addEventListener("click", spinWheel);
-
-    drawWheel();
-  });
-  </script>
+  resultDiv.innerHTML =
+    "Vous avez gagné : <span class='highlight'>" + prize +
+    "</span> 🎉<br><br><img src='" + qrLink + "'>";
+}
+</script>
 
 </body>
 </html>
