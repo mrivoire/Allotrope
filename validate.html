@@ -1,123 +1,87 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Validation du gain - Allotrope</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #111;
-      color: #fff;
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    .box {
-      background: #181818;
-      padding: 25px;
-      border-radius: 18px;
-      max-width: 420px;
-      margin: auto;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-    }
-
-    .highlight {
-      color: #f5c242;
-      font-weight: bold;
-      font-size: 1.2rem;
-    }
-
-    .used {
-      color: #ff4b4b !important;
-      font-weight: bold;
-    }
-
-    button {
-      margin-top: 25px;
-      padding: 14px 24px;
-      background: #f5c242;
-      color: #111;
-      border: none;
-      border-radius: 10px;
-      font-size: 1.1rem;
-      font-weight: bold;
-      cursor: pointer;
-      width: 100%;
-      box-shadow: 0 6px 20px rgba(245,194,66,0.4);
-      transition: 0.15s;
-    }
-
-    button.used-btn {
-      background: #ff4b4b;
-      color: white;
-      box-shadow: 0 6px 20px rgba(255,75,75,0.4);
-    }
-
-    button:disabled {
-      opacity: 0.55;
-      cursor: default;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>Validation du gain</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #111;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+  }
+  .box {
+    background: #181818;
+    padding: 25px;
+    border-radius: 16px;
+    max-width: 420px;
+    margin: auto;
+  }
+  button {
+    margin-top: 20px;
+    background: #f5c242;
+    color: #111;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+</style>
 </head>
+
 <body>
+<div class="box">
 
-  <div class="box">
-    <h1>Validation du gain</h1>
+  <h1>Validation du gain</h1>
 
-    <p>Gain remporté :</p>
-    <p id="gain" class="highlight"></p>
+  <div id="info"></div>
 
-    <p>ID du tirage :</p>
-    <p id="uid" class="highlight"></p>
+  <button id="useBtn">Marquer comme utilisé</button>
 
-    <hr style="margin: 25px 0; opacity: 0.2;">
+</div>
 
-    <button id="useBtn">✔ Marquer comme utilisé</button>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
 
-    <p id="status" style="margin-top:20px;"></p>
-  </div>
+  const params = new URLSearchParams(window.location.search);
+  const gain = params.get("gain");
+  const uid  = params.get("uid");
 
-  <script>
-    // Récupération gain + UID depuis l'URL
-    const params = new URLSearchParams(window.location.search);
-    const gain = params.get("gain") || "Inconnu";
-    const uid = params.get("uid") || "Erreur";
+  const key = "allotrope_used_" + uid;
+  const alreadyUsed = localStorage.getItem(key);
 
-    document.getElementById("gain").textContent = gain;
-    document.getElementById("uid").textContent = uid;
+  const info = document.getElementById("info");
 
-    const useBtn = document.getElementById("useBtn");
-    const status = document.getElementById("status");
+  if (!gain || !uid) {
+    info.innerHTML = "<p>❌ Paramètres invalides</p>";
+    document.getElementById("useBtn").style.display = "none";
+    return;
+  }
 
-    // Stockage local côté staff (anti-réutilisation)
-    const usedKey = "used_" + uid;
-    const alreadyUsed = localStorage.getItem(usedKey);
+  if (alreadyUsed) {
+    info.innerHTML =
+      "<p>Gain : <strong>" + gain + "</strong></p>" +
+      "<p>ID : " + uid + "</p>" +
+      "<p style='color:#f54242'>⚠️ Déjà marqué comme utilisé</p>";
+    return;
+  }
 
-    if (alreadyUsed) {
-      // Si déjà utilisé → on désactive tout
-      useBtn.disabled = true;
-      useBtn.classList.add("used-btn");
-      useBtn.textContent = "Déjà utilisé ❌";
-      status.innerHTML = "<span class='used'>Ce gain a déjà été validé.</span>";
-      document.getElementById("gain").classList.add("used");
-      document.getElementById("uid").classList.add("used");
-    }
+  info.innerHTML =
+    "<p>Gain : <strong>" + gain + "</strong></p>" +
+    "<p>ID : " + uid + "</p>";
 
-    useBtn.addEventListener("click", () => {
-      localStorage.setItem(usedKey, "true");
+  document.getElementById("useBtn").onclick = function () {
+    localStorage.setItem(key, "1");
+    alert("Gain marqué comme utilisé ✔");
+    location.reload();
+  };
 
-      useBtn.disabled = true;
-      useBtn.classList.add("used-btn");
-      useBtn.textContent = "Marqué comme utilisé ❌";
-
-      status.innerHTML = "<span class='used'>Gain consommé. Impossible de réutiliser ce QR.</span>";
-
-      document.getElementById("gain").classList.add("used");
-      document.getElementById("uid").classList.add("used");
-    });
-  </script>
+});
+</script>
 
 </body>
 </html>
