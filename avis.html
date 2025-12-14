@@ -58,17 +58,9 @@
       transform: scale(1.2);
     }
 
-    .smiley-wrap.bad {
-      background: #d9534f;
-    }
-
-    .smiley-wrap.medium {
-      background: #f0ad4e; /* JAUNE */
-    }
-
-    .smiley-wrap.good {
-      background: #5cb85c;
-    }
+    .smiley-wrap.bad { background: #d9534f; }
+    .smiley-wrap.medium { background: #f0ad4e; }
+    .smiley-wrap.good { background: #5cb85c; }
 
     .smiley {
       font-size: 2rem;
@@ -106,91 +98,71 @@
     <h1>Votre avis compte</h1>
 
     <div class="smileys">
-      <div class="smiley-wrap bad" data-type="bad">
-        <span class="smiley">😡</span>
-      </div>
-      <div class="smiley-wrap medium" data-type="medium">
-        <span class="smiley">😐</span>
-      </div>
-      <div class="smiley-wrap good" data-type="good">
-        <span class="smiley">😀</span>
-      </div>
+      <div class="smiley-wrap bad" data-type="bad"><span class="smiley">😡</span></div>
+      <div class="smiley-wrap medium" data-type="medium"><span class="smiley">😐</span></div>
+      <div class="smiley-wrap good" data-type="good"><span class="smiley">😀</span></div>
     </div>
 
-    <textarea
-      id="message"
-      placeholder="Dites-nous ce que vous en pensez..."
-      required
-    ></textarea>
+    <textarea id="message" placeholder="Dites-nous ce que vous en pensez..."></textarea>
 
-    <button id="sendBtn">Envoyer mon avis</button>
+    <!-- TYPE BUTTON = aucun submit possible -->
+    <button type="button" id="sendBtn">Envoyer mon avis</button>
   </div>
 
   <script>
-  const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
+    const GOOGLE_SCRIPT_URL =
+      "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
 
-  const GOOGLE_REVIEW_URL =
-    "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+    const GOOGLE_REVIEW_URL =
+      "https://g.page/r/CUGrJ6V4TpTjEAE/review";
 
-  const ROULETTE_URL = "index.html";
+    const ROULETTE_URL = "index.html";
 
-  let selectedType = null;
+    let selectedType = null;
 
-  const wraps = document.querySelectorAll(".smiley-wrap");
-  const message = document.getElementById("message");
-  const sendBtn = document.getElementById("sendBtn");
+    const wraps = document.querySelectorAll(".smiley-wrap");
+    const message = document.getElementById("message");
+    const sendBtn = document.getElementById("sendBtn");
 
-  // Sélection du smiley
-  wraps.forEach(wrap => {
-    wrap.addEventListener("click", () => {
-      wraps.forEach(w => w.classList.remove("selected"));
-      wrap.classList.add("selected");
-      selectedType = wrap.dataset.type;
-    });
-  });
-
-  // Envoi de l'avis
-  sendBtn.addEventListener("click", () => {
-    if (!selectedType) {
-      alert("Merci de sélectionner un smiley.");
-      return;
-    }
-
-    // 😀 → Google Avis
-    if (selectedType === "good") {
-      window.location.href = GOOGLE_REVIEW_URL;
-      return;
-    }
-
-    // 😡 / 😐 → avis interne
-    if (!message.value.trim()) {
-      alert("Merci de laisser un message.");
-      return;
-    }
-
-    // Envoi silencieux (CORS safe)
-    fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        ressenti:
-          selectedType === "bad"
-            ? "Pas content"
-            : "Moyennement content",
-        message: message.value
-      })
+    wraps.forEach(wrap => {
+      wrap.addEventListener("click", () => {
+        wraps.forEach(w => w.classList.remove("selected"));
+        wrap.classList.add("selected");
+        selectedType = wrap.dataset.type;
+      });
     });
 
-    // Confirmation utilisateur
-    alert("Merci pour votre retour 🙏");
+    sendBtn.addEventListener("click", (event) => {
+      event.preventDefault(); // 🔒 sécurité totale
 
-    // Redirection vers la roulette
-    window.location.href = ROULETTE_URL;
-  });
-</script>
+      if (!selectedType) {
+        alert("Merci de sélectionner un smiley.");
+        return;
+      }
+
+      if (selectedType === "good") {
+        window.location.href = GOOGLE_REVIEW_URL;
+        return;
+      }
+
+      if (!message.value.trim()) {
+        alert("Merci de laisser un message.");
+        return;
+      }
+
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ressenti: selectedType === "bad" ? "Pas content" : "Moyennement content",
+          message: message.value
+        })
+      });
+
+      alert("Merci pour votre retour 🙏");
+      window.location.href = ROULETTE_URL;
+    });
+  </script>
 </body>
 </html>
