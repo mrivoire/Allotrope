@@ -63,6 +63,13 @@
       background: #6fdc8c;
       display: none;
     }
+    .hint {
+      margin-top: 10px;
+      color: #bbb;
+      font-size: .9rem;
+      line-height: 1.3;
+      display: none;
+    }
   </style>
 </head>
 
@@ -78,59 +85,81 @@
 
   <textarea id="msg" placeholder="Votre message (facultatif pour Google)"></textarea>
 
-  <button id="sendBtn">Envoyer mon avis</button>
-  <button id="playBtn">🎁 J’ai laissé mon avis – Jouer</button>
+  <button id="sendBtn">Valider mon avis</button>
+  <button id="playBtn">🎁 J’ai laissé mon avis – Débloquer le jeu</button>
+
+  <div id="hint" class="hint">
+    Google Avis s’ouvre dans un autre onglet. Revenez ici puis cliquez sur “Débloquer le jeu”.
+  </div>
 </div>
 
 <script>
-const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+  const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+  const sendBtn = document.getElementById("sendBtn");
+  const playBtn = document.getElementById("playBtn");
+  const hint = document.getElementById("hint");
 
-const sendBtn = document.getElementById("sendBtn"); // Valider mon avis
-const playBtn = document.getElementById("playBtn"); // J'ai laissé mon avis
-let selected = null;
+  let selected = null;
 
-// Sélection du smiley
-document.querySelectorAll(".smiley").forEach(s => {
-  s.onclick = () => {
-    document.querySelectorAll(".smiley").forEach(x => x.classList.remove("selected"));
-    s.classList.add("selected");
-    selected = s.dataset.type;
-  };
-});
-
-// ✅ AU CHARGEMENT DE LA PAGE
-// Si le client revient de Google Avis → afficher le bouton
-if (localStorage.getItem("googleAvisOuvert")) {
-  playBtn.style.display = "block";
-  sendBtn.style.display = "none";
-}
-
-// Validation de l'avis
-sendBtn.onclick = () => {
-  if (!selected) {
-    alert("Merci de choisir un smiley.");
-    return;
+  function showPlayButton() {
+    playBtn.style.display = "block";
+    sendBtn.style.display = "none";
+    hint.style.display = "block";
   }
 
-  // 😀 → Google Avis
-  if (selected === "good") {
-    localStorage.setItem("googleAvisOuvert", "1");
-    window.open(GOOGLE_REVIEW_URL, "_blank");
+  // ✅ Important : se déclenche aussi quand on revient en arrière (Safari/iOS)
+  function restoreStateIfNeeded() {
+    if (localStorage.getItem("googleAvisOuvert") === "1") {
+      showPlayButton();
+    }
   }
 
-  // 😡 / 😐 → traitement interne (inchangé chez toi)
-  // fetch(...) si présent
+  // Sélection smiley
+  document.querySelectorAll(".smiley").forEach(s => {
+    s.addEventListener("click", () => {
+      document.querySelectorAll(".smiley").forEach(x => x.classList.remove("selected"));
+      s.classList.add("selected");
+      selected = s.dataset.type;
+    });
+  });
 
-  playBtn.style.display = "block";
-  sendBtn.style.display = "none";
-};
+  // Chargement normal
+  restoreStateIfNeeded();
 
-// 🎁 Bouton "J’ai laissé mon avis – Débloquer le jeu"
-playBtn.onclick = () => {
-  localStorage.removeItem("googleAvisOuvert");
-  localStorage.setItem("avisValide", "1");
-  window.location.href = "index.html";
-};
+  // Retour arrière / bfcache
+  window.addEventListener("pageshow", restoreStateIfNeeded);
+
+  // Valider
+  sendBtn.addEventListener("click", () => {
+    if (!selected) {
+      alert("Merci de choisir un smiley.");
+      return;
+    }
+
+    // 😀 → Google Avis
+    if (selected === "good") {
+      localStorage.setItem("googleAvisOuvert", "1");
+      // IMPORTANT : ouvrir Google dans un nouvel onglet
+      window.open(GOOGLE_REVIEW_URL, "_blank");
+      // Et on affiche tout de suite le bouton de déblocage
+      showPlayButton();
+      return;
+    }
+
+    // 😡 / 😐 : si tu as ton fetch d’envoi interne, il reste ici
+    // fetch(...)
+
+    // Pour 😡 / 😐 : on peut débloquer directement
+    localStorage.setItem("avisValide", "1");
+    window.location.href = "index.html";
+  });
+
+  // Débloquer le jeu après Google
+  playBtn.addEventListener("click", () => {
+    localStorage.removeItem("googleAvisOuvert");
+    localStorage.setItem("avisValide", "1");
+    window.location.href = "index.html";
+  });
 </script>
 </body>
 </html>
