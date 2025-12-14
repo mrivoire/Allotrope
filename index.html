@@ -81,62 +81,103 @@
     <button id="spinBtn">Lancer la roue</button>
 
     <div class="details">
-      Scanne le QR, clique sur <span class="highlight">Lancer la roue</span> et suis les étapes.
+      Clique sur <span class="highlight">Lancer la roue</span> pour découvrir ton gain 🎁
     </div>
   </div>
 
-  <script>
-    // --- (Optionnel) on dessine juste une roue statique pour le visuel ---
-    const canvas = document.getElementById("wheelCanvas");
-    const ctx = canvas.getContext("2d");
-    const size = canvas.width;
-    const radius = size / 2;
+<script>
+/* ===============================
+   🔐 CONTRÔLE D'ACCÈS AU JEU
+   =============================== */
+if (!localStorage.getItem("avisValide")) {
+  // Aucun avis validé → retour consignes / avis
+  window.location.href = "consignes.html";
+}
 
-    const prizes = [
-      "Tiramisu", "Panna cotta", "Cocktail du moment",
-      "Verre de vin 12 cl", "Bière 25 cl", "-10% sur la note", "Un shot offert"
-    ];
+/* ===============================
+   🎨 DESSIN DE LA ROUE
+   =============================== */
+const canvas = document.getElementById("wheelCanvas");
+const ctx = canvas.getContext("2d");
+const size = canvas.width;
+const radius = size / 2;
 
-    const colors = ["#f5c242","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#af7aa1"];
-    const sliceAngle = (2 * Math.PI) / prizes.length;
+const prizes = [
+  "Tiramisu", "Panna cotta", "Cocktail du moment",
+  "Verre de vin 12 cl", "Bière 25 cl", "-10% sur la note", "Un shot offert"
+];
 
-    function drawWheel() {
-      ctx.clearRect(0,0,size,size);
-      ctx.save();
-      ctx.translate(radius, radius);
+const colors = [
+  "#f5c242","#f28e2b","#e15759",
+  "#76b7b2","#59a14f","#edc948","#af7aa1"
+];
 
-      for (let i=0;i<prizes.length;i++){
-        ctx.beginPath();
-        ctx.moveTo(0,0);
-        ctx.arc(0,0,radius-4,i*sliceAngle,(i+1)*sliceAngle);
-        ctx.closePath();
-        ctx.fillStyle = colors[i % colors.length];
-        ctx.fill();
-        ctx.strokeStyle = "#111";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+const sliceAngle = (2 * Math.PI) / prizes.length;
+let currentAngle = 0;
+let isSpinning = false;
 
-        ctx.save();
-        ctx.fillStyle = "#111";
-        ctx.font = "bold 13px system-ui, sans-serif";
-        ctx.rotate(i*sliceAngle + sliceAngle/2);
-        ctx.translate(radius*0.68,0);
-        ctx.rotate(Math.PI/2);
-        const text = prizes[i];
-        ctx.fillText(text, -ctx.measureText(text).width/2, 0);
-        ctx.restore();
-      }
-      ctx.restore();
+function drawWheel(angle = 0) {
+  ctx.clearRect(0,0,size,size);
+  ctx.save();
+  ctx.translate(radius, radius);
+  ctx.rotate(angle);
+
+  for (let i = 0; i < prizes.length; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,radius-4,i*sliceAngle,(i+1)*sliceAngle);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.fillStyle = "#111";
+    ctx.font = "bold 13px system-ui, sans-serif";
+    ctx.rotate(i*sliceAngle + sliceAngle/2);
+    ctx.translate(radius*0.68,0);
+    ctx.rotate(Math.PI/2);
+    const text = prizes[i];
+    ctx.fillText(text, -ctx.measureText(text).width/2, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+drawWheel();
+
+/* ===============================
+   🎰 LANCEMENT DE LA ROUE
+   =============================== */
+document.getElementById("spinBtn").addEventListener("click", () => {
+  if (isSpinning) return;
+
+  // ⛔ Consomme le droit de jouer
+  localStorage.removeItem("avisValide");
+
+  isSpinning = true;
+  const targetRotation = (Math.random() * 5 + 5) * 2 * Math.PI;
+  const start = performance.now();
+  const duration = 4000;
+
+  function animate(time) {
+    const progress = Math.min((time - start) / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    currentAngle = easeOut * targetRotation;
+    drawWheel(currentAngle);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      isSpinning = false;
+      alert("🎉 Félicitations ! Présente ce résultat au staff pour récupérer ton gain.");
     }
+  }
 
-    drawWheel();
-
-    // --- IMPORTANT : redirection vers la page des consignes ---
-    const CONSIGNES_URL = "https://mrivoire.github.io/Allotrope/consignes.html";
-
-    document.getElementById("spinBtn").addEventListener("click", () => {
-      window.location.href = CONSIGNES_URL;
-    });
-  </script>
+  requestAnimationFrame(animate);
+});
+</script>
 </body>
 </html>

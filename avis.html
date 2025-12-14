@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <title>Votre avis</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: system-ui, sans-serif;
       background: #111;
       color: #fff;
       display: flex;
@@ -17,7 +16,6 @@
       justify-content: center;
       min-height: 100vh;
     }
-
     .container {
       background: #181818;
       border-radius: 22px;
@@ -27,20 +25,11 @@
       text-align: center;
       box-shadow: 0 14px 36px rgba(0,0,0,.65);
     }
-
-    h1 {
-      margin-top: 0;
-      font-size: 1.5rem;
-      margin-bottom: 12px;
-    }
-
     .smileys {
       display: flex;
       justify-content: space-between;
-      margin: 22px 0 18px;
-      padding: 0 8px;
+      margin: 20px 0;
     }
-
     .smiley-wrap {
       width: 64px;
       height: 64px;
@@ -49,50 +38,39 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      opacity: 0.45;
-      transition: transform .12s ease, opacity .12s ease;
+      opacity: 0.4;
+      transition: transform .15s, opacity .15s;
     }
-
     .smiley-wrap.selected {
       opacity: 1;
       transform: scale(1.2);
     }
-
     .bad { background: #d9534f; }
     .medium { background: #f0ad4e; }
     .good { background: #5cb85c; }
-
-    .smiley { font-size: 2rem; }
-
     textarea {
       width: 100%;
-      min-height: 92px;
+      min-height: 90px;
       border-radius: 12px;
       border: none;
       padding: 12px;
-      font-size: 0.95rem;
       margin-bottom: 14px;
-      resize: vertical;
     }
-
     button {
       width: 100%;
       padding: 14px;
-      font-size: 1rem;
-      font-weight: 600;
       border-radius: 999px;
       border: none;
-      cursor: pointer;
       background: #f5c242;
-      color: #111;
-      box-shadow: 0 6px 18px rgba(245,194,66,.5);
+      font-weight: 600;
+      cursor: pointer;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <h1>Votre avis compte</h1>
+    <h2>Votre avis compte</h2>
 
     <div class="smileys">
       <div class="smiley-wrap bad" data-type="bad">😡</div>
@@ -100,73 +78,66 @@
       <div class="smiley-wrap good" data-type="good">😀</div>
     </div>
 
-    <textarea id="message" placeholder="Dites-nous ce que vous en pensez..."></textarea>
-
-    <button type="button" id="sendBtn">Envoyer mon avis</button>
+    <textarea id="message" placeholder="Votre message..."></textarea>
+    <button type="button" id="sendBtn">Valider mon avis</button>
   </div>
 
 <script>
-  const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
+const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+const ROULETTE_URL = "index.html";
 
-  const GOOGLE_REVIEW_URL =
-    "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+let selectedType = null;
+const wraps = document.querySelectorAll(".smiley-wrap");
+const message = document.getElementById("message");
 
-  const ROULETTE_URL = "index.html";
-
-  let selectedType = null;
-
-  const wraps = document.querySelectorAll(".smiley-wrap");
-  const message = document.getElementById("message");
-  const sendBtn = document.getElementById("sendBtn");
-
-  wraps.forEach(wrap => {
-    wrap.addEventListener("click", () => {
-      wraps.forEach(w => w.classList.remove("selected"));
-      wrap.classList.add("selected");
-      selectedType = wrap.dataset.type;
-    });
+wraps.forEach(wrap => {
+  wrap.addEventListener("click", () => {
+    wraps.forEach(w => w.classList.remove("selected"));
+    wrap.classList.add("selected");
+    selectedType = wrap.dataset.type;
   });
+});
 
-  sendBtn.addEventListener("click", () => {
-    if (!selectedType) {
-      alert("Merci de sélectionner un smiley.");
-      return;
-    }
-
-    // 😀 Google avis obligatoire
-    if (selectedType === "good") {
-      localStorage.setItem("avisGoogleEnCours", "1");
-      window.location.href = GOOGLE_REVIEW_URL;
-      return;
-    }
-
-    // 😡 / 😐 avis interne obligatoire
-    if (!message.value.trim()) {
-      alert("Merci de laisser un message.");
-      return;
-    }
-
-    fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ressenti: selectedType === "bad" ? "Pas content" : "Moyennement content",
-        message: message.value
-      })
-    });
-
-    alert("Merci pour votre retour 🙏 Accès au jeu débloqué 🎁");
-    window.location.href = ROULETTE_URL;
-  });
-
-  // 🔐 Retour depuis Google Avis = déblocage du jeu
-  if (localStorage.getItem("avisGoogleEnCours")) {
-    localStorage.removeItem("avisGoogleEnCours");
-    alert("Merci pour votre avis 🙏 Accès au jeu débloqué 🎁");
-    window.location.href = ROULETTE_URL;
+document.getElementById("sendBtn").addEventListener("click", () => {
+  if (!selectedType) {
+    alert("Merci de sélectionner un smiley.");
+    return;
   }
+
+  // 😀 Google Avis
+  if (selectedType === "good") {
+    localStorage.setItem("avisGoogleEnCours", "1");
+    window.location.href = GOOGLE_REVIEW_URL;
+    return;
+  }
+
+  // 😡 / 😐 avis interne
+  if (!message.value.trim()) {
+    alert("Merci de laisser un message.");
+    return;
+  }
+
+  fetch(GOOGLE_SCRIPT_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ressenti: selectedType === "bad" ? "Pas content" : "Moyen",
+      message: message.value
+    })
+  });
+
+  localStorage.setItem("avisValide", "1");
+  window.location.href = ROULETTE_URL;
+});
+
+// 🔄 Retour depuis Google Avis
+if (localStorage.getItem("avisGoogleEnCours")) {
+  localStorage.removeItem("avisGoogleEnCours");
+  localStorage.setItem("avisValide", "1");
+  window.location.href = ROULETTE_URL;
+}
 </script>
 </body>
 </html>
