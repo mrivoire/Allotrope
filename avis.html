@@ -96,15 +96,26 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/TON_ID/exec";
 const GOOGLE_AVIS_URL = "https://g.page/r/TON_LIEN_GOOGLE/review";
 
 let selectedType = null;
-const messageInput = document.getElementById("message");
+
+// ⚠️ IDs CORRECTS (alignés avec le HTML)
+const messageInput = document.getElementById("msg");
+const smileys = document.querySelectorAll(".smiley");
 
 /* Sélection des smileys */
-document.querySelectorAll(".smiley-wrap").forEach(el => {
+smileys.forEach(el => {
   el.addEventListener("click", () => {
-    document.querySelectorAll(".smiley-wrap").forEach(s => s.classList.remove("selected"));
+    smileys.forEach(s => s.classList.remove("selected"));
     el.classList.add("selected");
     selectedType = el.dataset.type;
   });
+
+  // Support tactile iPhone
+  el.addEventListener("touchstart", e => {
+    e.preventDefault();
+    smileys.forEach(s => s.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedType = el.dataset.type;
+  }, { passive: false });
 });
 
 /* Envoi de l'avis */
@@ -114,40 +125,36 @@ document.getElementById("sendBtn").addEventListener("click", () => {
     return;
   }
 
-  if (!messageInput.value.trim()) {
-    alert("Merci de laisser un message.");
-    return;
-  }
-
   const body = new URLSearchParams();
   body.append(
     "ressenti",
     selectedType === "bad"
       ? "Pas content"
-      : selectedType === "neutral"
+      : selectedType === "medium"
       ? "Moyennement content"
       : "Content"
   );
-  body.append("message", messageInput.value);
+  body.append("message", messageInput.value || "");
 
-  // 🔥 ENVOI GARANTI DU POST (CORS SAFE)
+  // Envoi POST vers Google Apps Script
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
     body: body
   });
 
-  // 🔓 Débloque le jeu
+  // Débloque le jeu
   localStorage.setItem("avisValide", "1");
 
-  // 😀 Ouvre Google Avis si smiley positif
+  // Google Avis si smiley positif
   if (selectedType === "good") {
     window.open(GOOGLE_AVIS_URL, "_blank");
   }
 
-  // ➜ Retour au jeu
+  // Retour au jeu
   window.location.href = "index.html";
 });
 </script>
+
 </body>
 </html>
