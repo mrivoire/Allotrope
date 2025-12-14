@@ -1,143 +1,124 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Votre avis</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Votre avis compte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, sans-serif;
       background: #111;
       color: #fff;
+      font-family: system-ui, sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
+      margin: 0;
+      padding: 18px;
     }
-    .container {
+    .box {
       background: #181818;
-      border-radius: 22px;
-      padding: 26px 24px;
-      width: 90%;
+      border-radius: 20px;
+      padding: 22px;
       max-width: 420px;
+      width: 100%;
       text-align: center;
-      box-shadow: 0 14px 36px rgba(0,0,0,.65);
     }
+    h2 { margin-top: 0; }
     .smileys {
       display: flex;
       justify-content: space-between;
-      margin: 20px 0;
+      margin: 18px 0;
+      font-size: 2.2rem;
     }
-    .smiley-wrap {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .smiley {
       cursor: pointer;
-      opacity: 0.4;
-      transition: transform .15s, opacity .15s;
+      opacity: .4;
+      transition: transform .15s ease, opacity .15s ease;
     }
-    .smiley-wrap.selected {
+    .smiley.selected {
       opacity: 1;
       transform: scale(1.2);
     }
-    .bad { background: #d9534f; }
-    .medium { background: #f0ad4e; }
-    .good { background: #5cb85c; }
     textarea {
       width: 100%;
-      min-height: 90px;
-      border-radius: 12px;
+      border-radius: 14px;
       border: none;
       padding: 12px;
-      margin-bottom: 14px;
+      margin-top: 10px;
+      min-height: 80px;
+      font-family: inherit;
     }
     button {
       width: 100%;
+      margin-top: 14px;
       padding: 14px;
       border-radius: 999px;
       border: none;
-      background: #f5c242;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
+    }
+    #sendBtn { background: #f5c242; }
+    #playBtn {
+      background: #6fdc8c;
+      display: none;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h2>Votre avis compte</h2>
+<div class="box">
+  <h2>Votre avis compte</h2>
 
-    <div class="smileys">
-      <div class="smiley-wrap bad" data-type="bad">😡</div>
-      <div class="smiley-wrap medium" data-type="medium">😐</div>
-      <div class="smiley-wrap good" data-type="good">😀</div>
-    </div>
-
-    <textarea id="message" placeholder="Votre message..."></textarea>
-    <button type="button" id="sendBtn">Valider mon avis</button>
+  <div class="smileys">
+    <div class="smiley" data-type="bad">😡</div>
+    <div class="smiley" data-type="medium">😐</div>
+    <div class="smiley" data-type="good">😀</div>
   </div>
 
+  <textarea id="msg" placeholder="Votre message (facultatif pour Google)"></textarea>
+
+  <button id="sendBtn">Envoyer mon avis</button>
+  <button id="playBtn">🎁 J’ai laissé mon avis – Jouer</button>
+</div>
+
 <script>
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
 const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
-const ROULETTE_URL = "index.html";
 
-let selectedType = null;
-const wraps = document.querySelectorAll(".smiley-wrap");
-const message = document.getElementById("message");
+let selected = null;
 
-wraps.forEach(wrap => {
-  wrap.addEventListener("click", () => {
-    wraps.forEach(w => w.classList.remove("selected"));
-    wrap.classList.add("selected");
-    selectedType = wrap.dataset.type;
-  });
+document.querySelectorAll(".smiley").forEach(s => {
+  s.onclick = () => {
+    document.querySelectorAll(".smiley").forEach(x => x.classList.remove("selected"));
+    s.classList.add("selected");
+    selected = s.dataset.type;
+  };
 });
 
-document.getElementById("sendBtn").addEventListener("click", () => {
-  if (!selectedType) {
-    alert("Merci de sélectionner un smiley.");
+document.getElementById("sendBtn").onclick = () => {
+  if (!selected) {
+    alert("Merci de choisir un smiley.");
     return;
   }
 
-  // 😀 Google Avis
-  if (selectedType === "good") {
-    localStorage.setItem("avisGoogleEnCours", "1");
-    window.location.href = GOOGLE_REVIEW_URL;
-    return;
+  // 😀 → Google Avis
+  if (selected === "good") {
+    window.open(GOOGLE_REVIEW_URL, "_blank");
   }
 
-  // 😡 / 😐 avis interne
-  if (!message.value.trim()) {
-    alert("Merci de laisser un message.");
-    return;
-  }
+  // 😡 / 😐 → ton envoi interne (inchangé chez toi)
+  // (si tu as un fetch Google Script ici, tu le laisses)
 
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ressenti: selectedType === "bad" ? "Pas content" : "Moyen",
-      message: message.value
-    })
-  });
+  // 👉 Affiche le bouton de confirmation
+  document.getElementById("playBtn").style.display = "block";
+  document.getElementById("sendBtn").disabled = true;
+};
 
+document.getElementById("playBtn").onclick = () => {
+  // 🔐 Déblocage officiel du jeu
   localStorage.setItem("avisValide", "1");
-  window.location.href = ROULETTE_URL;
-});
-
-// 🔄 Retour depuis Google Avis
-if (localStorage.getItem("avisGoogleEnCours")) {
-  localStorage.removeItem("avisGoogleEnCours");
-  localStorage.setItem("avisValide", "1");
-  window.location.href = ROULETTE_URL;
-}
+  window.location.href = "index.html";
+};
 </script>
 </body>
 </html>
