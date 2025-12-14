@@ -46,6 +46,16 @@
       background: #f5c242;
       cursor: pointer;
     }
+    #result {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #111;
+      color: #f5c242;
+      font-weight: 700;
+      font-size: 1.1rem;
+      display: none;
+    }
   </style>
 </head>
 
@@ -57,6 +67,9 @@
   <canvas id="wheel" width="300" height="300"></canvas>
 
   <button id="spinBtn">Lancer la roue</button>
+
+  <!-- 🎉 Résultat affiché ici -->
+  <div id="result"></div>
 </div>
 
 <script>
@@ -67,6 +80,7 @@ const CONSIGNES_URL = "consignes.html";
 const wheel = document.getElementById("wheel");
 const ctx = wheel.getContext("2d");
 const spinBtn = document.getElementById("spinBtn");
+const resultBox = document.getElementById("result");
 
 const prizes = [
   "Tiramisu",
@@ -78,14 +92,18 @@ const prizes = [
   "Shot offert"
 ];
 
-const colors = ["#f5c242","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#af7aa1"];
+const colors = [
+  "#f5c242","#f28e2b","#e15759",
+  "#76b7b2","#59a14f","#edc948","#af7aa1"
+];
+
 const slice = (2 * Math.PI) / prizes.length;
 
 let angle = 0;
 let spinning = false;
 
 /* =============================
-   DESSIN DE LA ROUE
+   DESSIN ROUE
 ============================= */
 function draw() {
   ctx.clearRect(0,0,300,300);
@@ -116,27 +134,28 @@ function draw() {
 draw();
 
 /* =============================
-   SPIN LOGIC AVEC GAIN
+   SPIN AVEC AFFICHAGE DU GAIN
 ============================= */
 spinBtn.onclick = () => {
   if (spinning) return;
 
-  // 🔁 AVANT AVIS → consignes
+  // Avant avis → consignes
   if (!localStorage.getItem("avisValide")) {
     window.location.href = CONSIGNES_URL;
     return;
   }
 
-  // ✅ APRÈS AVIS → JEU
   localStorage.removeItem("avisValide");
   spinning = true;
   spinBtn.disabled = true;
 
-  // 🎯 On choisit le gain AVANT
+  // Cache l'ancien résultat
+  resultBox.style.display = "none";
+
+  // 🎯 Gain choisi
   const winningIndex = Math.floor(Math.random() * prizes.length);
   const winningPrize = prizes[winningIndex];
 
-  // Angle pour amener le centre du segment sous le curseur
   const extraTurns = 6;
   const targetAngle =
     extraTurns * 2 * Math.PI +
@@ -160,8 +179,13 @@ spinBtn.onclick = () => {
       spinning = false;
       spinBtn.disabled = false;
 
-      // 🎉 AFFICHAGE DU GAIN
-      alert("🎉 Félicitations !\nVous avez gagné :\n\n👉 " + winningPrize + "\n\nMontrez cet écran au staff.");
+      // 🎉 AFFICHAGE DU GAIN SUR LA PAGE
+      resultBox.innerHTML =
+        "🎉 Félicitations, vous avez gagné :<br><strong>" +
+        winningPrize +
+        "</strong>";
+
+      resultBox.style.display = "block";
     }
   }
 
