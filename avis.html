@@ -1,73 +1,72 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Votre avis compte</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      background:#111;
-      color:#fff;
-      font-family:system-ui,sans-serif;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height:100vh;
-      margin:0;
-      padding:18px;
-    }
-    .box {
-      background:#181818;
-      border-radius:22px;
-      padding:22px;
-      max-width:420px;
-      width:100%;
-      text-align:center;
-    }
-    h2 {margin-top:0;}
-    .smileys {
-      display:flex;
-      justify-content:space-between;
-      margin:18px 0;
-      font-size:2.3rem;
-    }
-    .smiley {
-      cursor:pointer;
-      opacity:.4;
-      transition:.15s;
-    }
-    .smiley.selected {
-      opacity:1;
-      transform:scale(1.2);
-    }
-    textarea {
-      width:100%;
-      border-radius:14px;
-      border:none;
-      padding:12px;
-      margin-top:10px;
-      min-height:80px;
-      font-family:inherit;
-    }
-    button {
-      width:100%;
-      margin-top:14px;
-      padding:14px;
-      border-radius:999px;
-      border:none;
-      font-weight:700;
-      cursor:pointer;
-    }
-    #sendBtn {background:#f5c242;}
-    #playBtn {background:#6fdc8c; display:none;}
-    .hint {
-      margin-top:10px;
-      font-size:.9rem;
-      color:#bbb;
-      display:none;
-      line-height:1.3;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Votre avis compte</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  background:#111;
+  color:#fff;
+  font-family:system-ui,sans-serif;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  margin:0;
+  padding:18px;
+}
+
+.box {
+  background:#181818;
+  border-radius:22px;
+  padding:22px;
+  max-width:420px;
+  width:100%;
+  text-align:center;
+}
+
+.smileys {
+  display:flex;
+  justify-content:space-between;
+  margin:18px 0;
+  font-size:2.3rem;
+}
+
+.smiley {
+  background:none;
+  border:none;
+  cursor:pointer;
+  opacity:.4;
+  transition:.15s;
+  font-size:2.3rem;
+}
+
+.smiley.selected {
+  opacity:1;
+  transform:scale(1.2);
+}
+
+textarea {
+  width:100%;
+  border-radius:14px;
+  border:none;
+  padding:12px;
+  min-height:80px;
+}
+
+button#sendBtn {
+  width:100%;
+  margin-top:14px;
+  padding:14px;
+  border-radius:999px;
+  border:none;
+  font-weight:700;
+  background:#f5c242;
+  cursor:pointer;
+}
+</style>
 </head>
 
 <body>
@@ -75,20 +74,14 @@
   <h2>Votre avis compte</h2>
 
   <div class="smileys">
-    <div class="smiley" data-type="bad">😡</div>
-    <div class="smiley" data-type="medium">😐</div>
-    <div class="smiley" data-type="good">😀</div>
+    <button class="smiley" data-type="bad">😡</button>
+    <button class="smiley" data-type="medium">😐</button>
+    <button class="smiley" data-type="good">😀</button>
   </div>
 
   <textarea id="msg" placeholder="Votre message (facultatif)"></textarea>
 
   <button id="sendBtn" type="button">Valider mon avis</button>
-  <button id="playBtn" type="button">🎁 J’ai laissé mon avis – Débloquer le jeu</button>
-
-  <div id="hint" class="hint">
-    Google Avis s’ouvre dans un autre onglet.<br>
-    Revenez ici puis cliquez sur “Débloquer le jeu”.
-  </div>
 </div>
 
 <script>
@@ -96,29 +89,17 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/TON_ID/exec";
 const GOOGLE_AVIS_URL = "https://g.page/r/TON_LIEN_GOOGLE/review";
 
 let selectedType = null;
-
-// ⚠️ IDs CORRECTS (alignés avec le HTML)
 const messageInput = document.getElementById("msg");
 const smileys = document.querySelectorAll(".smiley");
 
-/* Sélection des smileys */
 smileys.forEach(el => {
   el.addEventListener("click", () => {
     smileys.forEach(s => s.classList.remove("selected"));
     el.classList.add("selected");
     selectedType = el.dataset.type;
   });
-
-  // Support tactile iPhone
-  el.addEventListener("touchstart", e => {
-    e.preventDefault();
-    smileys.forEach(s => s.classList.remove("selected"));
-    el.classList.add("selected");
-    selectedType = el.dataset.type;
-  }, { passive: false });
 });
 
-/* Envoi de l'avis */
 document.getElementById("sendBtn").addEventListener("click", () => {
   if (!selectedType) {
     alert("Merci de sélectionner un smiley.");
@@ -136,25 +117,20 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   );
   body.append("message", messageInput.value || "");
 
-  // Envoi POST vers Google Apps Script
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
     body: body
   });
 
-  // Débloque le jeu
   localStorage.setItem("avisValide", "1");
 
-  // Google Avis si smiley positif
   if (selectedType === "good") {
     window.open(GOOGLE_AVIS_URL, "_blank");
   }
 
-  // Retour au jeu
   window.location.href = "index.html";
 });
 </script>
-
 </body>
 </html>
