@@ -21,7 +21,7 @@
     .container {
       background: #181818;
       border-radius: 22px;
-      padding: 26px 24px 24px;
+      padding: 26px 24px;
       width: 90%;
       max-width: 420px;
       text-align: center;
@@ -31,7 +31,7 @@
     h1 {
       margin-top: 0;
       font-size: 1.5rem;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .smileys {
@@ -41,28 +41,37 @@
       padding: 0 8px;
     }
 
-    .smiley {
-      font-size: 2.8rem;
+    .smiley-wrap {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       opacity: 0.45;
-      transition: transform 0.12s ease, opacity 0.12s ease;
+      transition: transform .12s ease, opacity .12s ease;
     }
 
-    .smiley.bad {
-      filter: hue-rotate(330deg) saturate(2);
-    }
-
-    .smiley.medium {
-      filter: hue-rotate(40deg) saturate(1.8);
-    }
-
-    .smiley.good {
-      filter: hue-rotate(95deg) saturate(1.8);
-    }
-
-    .smiley.selected {
+    .smiley-wrap.selected {
       opacity: 1;
-      transform: scale(1.22);
+      transform: scale(1.2);
+    }
+
+    .smiley-wrap.bad {
+      background: #d9534f;
+    }
+
+    .smiley-wrap.medium {
+      background: #f0ad4e; /* JAUNE */
+    }
+
+    .smiley-wrap.good {
+      background: #5cb85c;
+    }
+
+    .smiley {
+      font-size: 2rem;
     }
 
     textarea {
@@ -75,8 +84,6 @@
       margin-bottom: 14px;
       resize: vertical;
       box-sizing: border-box;
-      background: #f4f4f4;
-      color: #111;
     }
 
     button {
@@ -99,57 +106,80 @@
     <h1>Votre avis compte</h1>
 
     <div class="smileys">
-      <span class="smiley bad" data-type="bad">😡</span>
-      <span class="smiley medium" data-type="medium">😐</span>
-      <span class="smiley good" data-type="good">😀</span>
+      <div class="smiley-wrap bad" data-type="bad">
+        <span class="smiley">😡</span>
+      </div>
+      <div class="smiley-wrap medium" data-type="medium">
+        <span class="smiley">😐</span>
+      </div>
+      <div class="smiley-wrap good" data-type="good">
+        <span class="smiley">😀</span>
+      </div>
     </div>
 
-    <!-- Envoi email pour 😡 / 😐 -->
-    <form
-      id="avisForm"
-      action="https://formspree.io/f/xjvqqlgp"
-      method="POST"
-    >
-      <input type="hidden" name="ressenti" id="ressenti" />
+    <textarea
+      id="message"
+      placeholder="Dites-nous ce que vous en pensez..."
+      required
+    ></textarea>
 
-      <textarea
-        name="message"
-        placeholder="Dites-nous ce que vous en pensez..."
-        required
-      ></textarea>
-
-      <button type="submit">Envoyer mon avis</button>
-    </form>
+    <button id="sendBtn">Envoyer mon avis</button>
   </div>
 
   <script>
-    let selectedType = null;
-    const smileys = document.querySelectorAll(".smiley");
-    const ressentiInput = document.getElementById("ressenti");
-    const form = document.getElementById("avisForm");
+    const GOOGLE_SCRIPT_URL = "COLLE_ICI_TON_URL_GOOGLE_SCRIPT";
+    const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+    const ROULETTE_URL = "index.html";
 
-    smileys.forEach(smiley => {
-      smiley.addEventListener("click", () => {
-        smileys.forEach(s => s.classList.remove("selected"));
-        smiley.classList.add("selected");
-        selectedType = smiley.dataset.type;
-        ressentiInput.value = selectedType;
+    let selectedType = null;
+    const wraps = document.querySelectorAll(".smiley-wrap");
+    const message = document.getElementById("message");
+
+    wraps.forEach(wrap => {
+      wrap.addEventListener("click", () => {
+        wraps.forEach(w => w.classList.remove("selected"));
+        wrap.classList.add("selected");
+        selectedType = wrap.dataset.type;
       });
     });
 
-    form.addEventListener("submit", (e) => {
+    document.getElementById("sendBtn").addEventListener("click", () => {
       if (!selectedType) {
-        e.preventDefault();
         alert("Merci de sélectionner un smiley.");
+        return;
+      }
+
+      if (!message.value.trim()) {
+        alert("Merci de laisser un message.");
         return;
       }
 
       // 😀 → Google Avis
       if (selectedType === "good") {
-        e.preventDefault();
-        window.location.href = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+        window.location.href = GOOGLE_REVIEW_URL;
+        return;
       }
-      // 😡 / 😐 → Formspree → email pierrejahjahoueis@gmail.com
+
+      // 😡 / 😐 → envoi silencieux par Google Apps Script
+      fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          ressenti:
+            selectedType === "bad"
+              ? "Pas content"
+              : "Moyennement content",
+          message: message.value
+        })
+      })
+      .then(() => {
+        window.location.href = ROULETTE_URL;
+      })
+      .catch(() => {
+        alert("Une erreur est survenue. Merci de réessayer.");
+      });
     });
   </script>
 </body>
