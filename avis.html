@@ -85,8 +85,11 @@
 <script>
 const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
 
+const sendBtn = document.getElementById("sendBtn"); // Valider mon avis
+const playBtn = document.getElementById("playBtn"); // J'ai laissé mon avis
 let selected = null;
 
+// Sélection du smiley
 document.querySelectorAll(".smiley").forEach(s => {
   s.onclick = () => {
     document.querySelectorAll(".smiley").forEach(x => x.classList.remove("selected"));
@@ -95,7 +98,15 @@ document.querySelectorAll(".smiley").forEach(s => {
   };
 });
 
-document.getElementById("sendBtn").onclick = () => {
+// ✅ AU CHARGEMENT DE LA PAGE
+// Si le client revient de Google Avis → afficher le bouton
+if (localStorage.getItem("googleAvisOuvert")) {
+  playBtn.style.display = "block";
+  sendBtn.style.display = "none";
+}
+
+// Validation de l'avis
+sendBtn.onclick = () => {
   if (!selected) {
     alert("Merci de choisir un smiley.");
     return;
@@ -103,19 +114,20 @@ document.getElementById("sendBtn").onclick = () => {
 
   // 😀 → Google Avis
   if (selected === "good") {
+    localStorage.setItem("googleAvisOuvert", "1");
     window.open(GOOGLE_REVIEW_URL, "_blank");
   }
 
-  // 😡 / 😐 → ton envoi interne (inchangé chez toi)
-  // (si tu as un fetch Google Script ici, tu le laisses)
+  // 😡 / 😐 → traitement interne (inchangé chez toi)
+  // fetch(...) si présent
 
-  // 👉 Affiche le bouton de confirmation
-  document.getElementById("playBtn").style.display = "block";
-  document.getElementById("sendBtn").disabled = true;
+  playBtn.style.display = "block";
+  sendBtn.style.display = "none";
 };
 
-document.getElementById("playBtn").onclick = () => {
-  // 🔐 Déblocage officiel du jeu
+// 🎁 Bouton "J’ai laissé mon avis – Débloquer le jeu"
+playBtn.onclick = () => {
+  localStorage.removeItem("googleAvisOuvert");
   localStorage.setItem("avisValide", "1");
   window.location.href = "index.html";
 };
