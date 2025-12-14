@@ -89,14 +89,9 @@
 /* ===============================
    🔐 CONTRÔLE D'ACCÈS AU JEU
    =============================== */
-const hasAccess = localStorage.getItem("avisValide");
-
-// Debug utile : tu peux le retirer après
-console.log("avisValide =", hasAccess);
-
-if (!hasAccess) {
-  // Aucun avis validé → on renvoie vers la page d'avis (pas consignes)
-  window.location.href = "avis.html";
+if (!localStorage.getItem("avisValide")) {
+  // Aucun avis validé → retour consignes / avis
+  window.location.href = "consignes.html";
 }
 
 /* ===============================
@@ -159,14 +154,7 @@ drawWheel();
 document.getElementById("spinBtn").addEventListener("click", () => {
   if (isSpinning) return;
 
-  // Si pour une raison quelconque l'accès a disparu, on rebloque
-  if (!localStorage.getItem("avisValide")) {
-    alert("Merci de laisser un avis avant de jouer.");
-    window.location.href = "avis.html";
-    return;
-  }
-
-  // ⛔ Consomme le droit de jouer (1 avis = 1 partie)
+  // ⛔ Consomme le droit de jouer
   localStorage.removeItem("avisValide");
 
   isSpinning = true;
@@ -184,7 +172,7 @@ document.getElementById("spinBtn").addEventListener("click", () => {
       requestAnimationFrame(animate);
     } else {
       isSpinning = false;
-      alert("🎉 Félicitations ! Montre ton écran au staff pour récupérer ton gain.");
+      alert("🎉 Félicitations ! Présente ce résultat au staff pour récupérer ton gain.");
     }
   }
 
