@@ -85,7 +85,7 @@ let angle = 0;
 let spinning = false;
 
 /* =============================
-   DESSIN ROUE
+   DESSIN DE LA ROUE
 ============================= */
 function draw() {
   ctx.clearRect(0,0,300,300);
@@ -116,7 +116,7 @@ function draw() {
 draw();
 
 /* =============================
-   SPIN LOGIC
+   SPIN LOGIC AVEC GAIN
 ============================= */
 spinBtn.onclick = () => {
   if (spinning) return;
@@ -130,21 +130,38 @@ spinBtn.onclick = () => {
   // ✅ APRÈS AVIS → JEU
   localStorage.removeItem("avisValide");
   spinning = true;
+  spinBtn.disabled = true;
 
-  const target = Math.random() * 10 + 10;
+  // 🎯 On choisit le gain AVANT
+  const winningIndex = Math.floor(Math.random() * prizes.length);
+  const winningPrize = prizes[winningIndex];
+
+  // Angle pour amener le centre du segment sous le curseur
+  const extraTurns = 6;
+  const targetAngle =
+    extraTurns * 2 * Math.PI +
+    (3 * Math.PI) / 2 -
+    (winningIndex * slice + slice / 2);
+
+  const startAngle = angle;
+  const delta = targetAngle - startAngle;
   const start = performance.now();
-  const duration = 4000;
+  const duration = 4200;
 
   function animate(t) {
     const p = Math.min((t - start) / duration, 1);
-    angle = target * (1 - Math.pow(1 - p, 3));
+    const eased = 1 - Math.pow(1 - p, 3);
+    angle = startAngle + delta * eased;
     draw();
 
     if (p < 1) {
       requestAnimationFrame(animate);
     } else {
       spinning = false;
-      alert("🎉 Présente ton écran au staff pour récupérer ton gain !");
+      spinBtn.disabled = false;
+
+      // 🎉 AFFICHAGE DU GAIN
+      alert("🎉 Félicitations !\nVous avez gagné :\n\n👉 " + winningPrize + "\n\nMontrez cet écran au staff.");
     }
   }
 
