@@ -98,16 +98,25 @@ const GOOGLE_AVIS_URL = "https://g.page/r/TON_LIEN_GOOGLE/review";
 let selectedType = null;
 const messageInput = document.getElementById("message");
 
-/* Sélection des smileys */
+/* Sélection smiley (DESKTOP + IPHONE) */
+function selectSmiley(el) {
+  document.querySelectorAll(".smiley-wrap").forEach(s => s.classList.remove("selected"));
+  el.classList.add("selected");
+  selectedType = el.dataset.type;
+}
+
 document.querySelectorAll(".smiley-wrap").forEach(el => {
-  el.addEventListener("click", () => {
-    document.querySelectorAll(".smiley-wrap").forEach(s => s.classList.remove("selected"));
-    el.classList.add("selected");
-    selectedType = el.dataset.type;
-  });
+  // Desktop
+  el.addEventListener("click", () => selectSmiley(el));
+
+  // iPhone / Safari
+  el.addEventListener("touchstart", e => {
+    e.preventDefault();
+    selectSmiley(el);
+  }, { passive: false });
 });
 
-/* Envoi de l'avis */
+/* Envoi avis */
 document.getElementById("sendBtn").addEventListener("click", () => {
   if (!selectedType) {
     alert("Merci de sélectionner un smiley.");
@@ -130,22 +139,22 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   );
   body.append("message", messageInput.value);
 
-  // 🔥 ENVOI GARANTI DU POST (CORS SAFE)
+  // POST fiable vers Google Apps Script
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
     mode: "no-cors",
     body: body
   });
 
-  // 🔓 Débloque le jeu
+  // Débloque le jeu
   localStorage.setItem("avisValide", "1");
 
-  // 😀 Ouvre Google Avis si smiley positif
+  // Google Avis si smiley positif
   if (selectedType === "good") {
     window.open(GOOGLE_AVIS_URL, "_blank");
   }
 
-  // ➜ Retour au jeu
+  // Retour au jeu
   window.location.href = "index.html";
 });
 </script>
