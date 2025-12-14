@@ -59,15 +59,13 @@
       cursor:pointer;
     }
     #sendBtn {background:#f5c242;}
-    #playBtn {
-      background:#6fdc8c;
-      display:none;
-    }
+    #playBtn {background:#6fdc8c; display:none;}
     .hint {
       margin-top:10px;
       font-size:.9rem;
       color:#bbb;
       display:none;
+      line-height:1.3;
     }
   </style>
 </head>
@@ -84,8 +82,8 @@
 
   <textarea id="msg" placeholder="Votre message (facultatif)"></textarea>
 
-  <button id="sendBtn">Valider mon avis</button>
-  <button id="playBtn">🎁 J’ai laissé mon avis – Débloquer le jeu</button>
+  <button id="sendBtn" type="button">Valider mon avis</button>
+  <button id="playBtn" type="button">🎁 J’ai laissé mon avis – Débloquer le jeu</button>
 
   <div id="hint" class="hint">
     Google Avis s’ouvre dans un autre onglet.<br>
@@ -104,21 +102,6 @@ const msg = document.getElementById("msg");
 
 let selected = null;
 
-function showPlay() {
-  playBtn.style.display = "block";
-  sendBtn.style.display = "none";
-  hint.style.display = "block";
-}
-
-// 🔁 Au chargement ET au retour arrière (Safari)
-function restore() {
-  if (localStorage.getItem("googleAvisOuvert") === "1") {
-    showPlay();
-  }
-}
-window.addEventListener("pageshow", restore);
-restore();
-
 // Sélection smiley
 document.querySelectorAll(".smiley").forEach(s => {
   s.onclick = () => {
@@ -128,7 +111,18 @@ document.querySelectorAll(".smiley").forEach(s => {
   };
 });
 
-// Valider
+// Affichage bouton après retour Google (Safari compris)
+function restoreState() {
+  if (localStorage.getItem("googleAvisOuvert") === "1") {
+    playBtn.style.display = "block";
+    sendBtn.style.display = "none";
+    hint.style.display = "block";
+  }
+}
+window.addEventListener("pageshow", restoreState);
+restoreState();
+
+// Validation avis
 sendBtn.onclick = () => {
   if (!selected) {
     alert("Merci de choisir un smiley.");
@@ -139,29 +133,27 @@ sendBtn.onclick = () => {
   if (selected === "good") {
     localStorage.setItem("googleAvisOuvert", "1");
     window.open(GOOGLE_REVIEW_URL, "_blank");
-    showPlay();
+    restoreState();
     return;
   }
 
-  // 😡 / 😐 → MAIL
+  // 😡 / 😐 → envoi mail (form-urlencoded, fiable)
+  const body = new URLSearchParams();
+  body.append("ressenti", selected === "bad" ? "Pas content" : "Moyennement content");
+  body.append("message", msg.value || "(aucun message)");
+
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ressenti: selected === "bad" ? "Pas content" : "Moyennement content",
-      message: msg.value || "(aucun message)"
-    })
-  })
-  .then(() => {
-    localStorage.setItem("avisValide", "1");
-    window.location.href = "index.html";
-  })
-  .catch(() => {
-    alert("Erreur lors de l’envoi de l’avis.");
+    mode: "no-cors",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body: body.toString()
   });
+
+  localStorage.setItem("avisValide", "1");
+  window.location.href = "index.html";
 };
 
-// Débloquer après Google
+// Bouton après Google
 playBtn.onclick = () => {
   localStorage.removeItem("googleAvisOuvert");
   localStorage.setItem("avisValide", "1");
