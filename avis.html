@@ -62,17 +62,9 @@
       border: 2px solid transparent;
     }
 
-    .smiley.bad {
-      background: #3a1115;
-    }
-
-    .smiley.medium {
-      background: #3a3211;
-    }
-
-    .smiley.good {
-      background: #163a24;
-    }
+    .smiley.bad { background: #3a1115; }
+    .smiley.medium { background: #3a3211; }
+    .smiley.good { background: #163a24; }
 
     .smiley.selected {
       border-color: #f5c242;
@@ -87,11 +79,11 @@
       margin-bottom: 8px;
     }
 
-    /* Formulaire */
-    .feedback-form {
+    /* Formulaire interne */
+    form.feedback-form {
       margin-top: 10px;
       text-align: left;
-      display: none;
+      display: none; /* affiché seulement pour 😡 / 😕 */
     }
 
     .field-label {
@@ -178,23 +170,28 @@
     <h2>Donnez votre avis</h2>
 
     <div class="smileys">
-      <div class="smiley bad" data-type="bad" title="Pas content">
-        😡
-      </div>
-      <div class="smiley medium" data-type="medium" title="Pas mal">
-        😕
-      </div>
-      <div class="smiley good" data-type="good" title="Très content">
-        😀
-      </div>
+      <div class="smiley bad" data-type="bad" title="Pas content">😡</div>
+      <div class="smiley medium" data-type="medium" title="Pas mal">😕</div>
+      <div class="smiley good" data-type="good" title="Très content">😀</div>
     </div>
 
     <div class="hint" id="hint"></div>
 
-    <!-- Formulaire pour bad / medium -->
-    <div class="feedback-form" id="feedbackForm">
+    <!-- Formulaire interne (uniquement pour 😡 / 😕) -->
+    <form
+      class="feedback-form"
+      id="feedbackForm"
+      action="https://formspree.io/f/TON_ID_FORM"
+      method="POST"
+    >
+      <!-- Ces champs seront envoyés par mail -->
+      <input type="hidden" name="ressenti" id="hiddenType" />
+      <input type="hidden" name="note_etoiles" id="hiddenStars" />
+
       <div class="field">
-        <div class="field-label">Note (interne, ne sera pas publiée sur Google)</div>
+        <div class="field-label">
+          Note (interne, ne sera pas publiée sur Google)
+        </div>
         <div class="stars" id="stars">
           <span class="star" data-value="1">★</span>
           <span class="star" data-value="2">★</span>
@@ -205,24 +202,34 @@
       </div>
 
       <div class="field">
-        <div class="field-label">Dites-nous ce que nous pouvons améliorer :</div>
-        <textarea id="comment" placeholder="Votre message..."></textarea>
+        <div class="field-label">Dites-nous ce que vous n’avez pas aimé :</div>
+        <textarea
+          id="comment"
+          name="commentaire"
+          placeholder="Votre message..."
+          required
+        ></textarea>
       </div>
 
-      <button id="sendBtn">Envoyer mon avis interne</button>
+      <button type="submit">Envoyer mon avis interne</button>
 
       <div class="note">
         Cet avis est envoyé uniquement à l'équipe Allotrope, par email.<br />
         Il ne sera pas publié sur Google.
       </div>
-    </div>
+    </form>
 
-    <!-- Bouton pour Google avis (good) -->
+    <!-- Bloc pour Google avis (uniquement pour 😀) -->
     <div id="googleBox" style="display:none; margin-top: 10px;">
       <div class="note">
         Merci beaucoup ! Si vous avez passé un bon moment, vous pouvez nous soutenir avec un avis public :
       </div>
-      <a class="link-google" id="googleLink" target="_blank" rel="noopener noreferrer">
+      <a
+        class="link-google"
+        id="googleLink"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         Laisser un avis sur Google ⭐
       </a>
     </div>
@@ -234,14 +241,13 @@
     const feedbackForm = document.getElementById("feedbackForm");
     const stars = document.querySelectorAll(".star");
     const comment = document.getElementById("comment");
-    const sendBtn = document.getElementById("sendBtn");
     const googleBox = document.getElementById("googleBox");
     const googleLink = document.getElementById("googleLink");
+    const hiddenType = document.getElementById("hiddenType");
+    const hiddenStars = document.getElementById("hiddenStars");
 
-    // À REMPLACER : ton email et ton lien Google Avis
-    const DEST_EMAIL = "AVIS_EMAIL@exemple.com"; // <-- mets ton email ici
-    const GOOGLE_AVIS_URL = "https://g.page/r/TONLIENREVIEWS/review"; // <-- mets ton lien Google ici
-
+    // A REMPLACER : ton lien Google Avis
+    const GOOGLE_AVIS_URL = "https://g.page/r/TONLIENREVIEWS/review";
     googleLink.href = GOOGLE_AVIS_URL;
 
     let selectedType = null;
@@ -252,22 +258,24 @@
         const type = smiley.getAttribute("data-type");
         selectedType = type;
 
-        // Reset visuel
+        // reset visuel
         smileys.forEach(s => s.classList.remove("selected"));
         smiley.classList.add("selected");
 
         if (type === "good") {
-          // Bon avis -> Google
+          // Avis positif -> vers Google
           feedbackForm.style.display = "none";
           googleBox.style.display = "block";
-          hint.textContent = "Merci beaucoup ! Vous pouvez nous laisser un avis public sur Google.";
+          hint.textContent =
+            "Merci ! Vous pouvez nous laisser un avis public sur Google.";
         } else {
-          // Avis interne
+          // Avis interne (négatif / moyen)
           googleBox.style.display = "none";
           feedbackForm.style.display = "block";
-          hint.textContent = type === "bad"
-            ? "Nous sommes désolés. Dites-nous ce qui n'a pas été."
-            : "Merci, dites-nous ce que nous pouvons améliorer.";
+          hint.textContent =
+            type === "bad"
+              ? "Nous sommes désolés. Dites-nous ce que vous n'avez pas aimé."
+              : "Merci, dites-nous ce que nous pouvons améliorer.";
         }
       });
     });
@@ -286,41 +294,21 @@
       });
     });
 
-    sendBtn.addEventListener("click", () => {
-      if (!selectedType) {
-        alert("Choisissez d'abord un smiley.");
+    // Avant l'envoi, on remplit les champs cachés
+    feedbackForm.addEventListener("submit", (e) => {
+      if (!selectedType || (selectedType !== "bad" && selectedType !== "medium")) {
+        // Normalement le formulaire n'est visible que pour bad/medium
+        alert("Choisissez d'abord un smiley (pas content ou pas mal).");
+        e.preventDefault();
         return;
       }
 
-      if (selectedStars === 0) {
-        const confirmNoStars = confirm("Vous n'avez pas mis de note en étoiles. Envoyer quand même ?");
-        if (!confirmNoStars) return;
-      }
+      const typeLabel = selectedType === "bad" ? "Pas content" : "Pas mal";
+      hiddenType.value = typeLabel;
+      hiddenStars.value = selectedStars ? selectedStars : "non renseignée";
 
-      const typeLabel = selectedType === "bad"
-        ? "Pas content"
-        : "Pas mal";
-
-      const subject = encodeURIComponent("Avis interne client - Allotrope");
-      const bodyLines = [
-        "Type de ressenti : " + typeLabel,
-        "Note (sur 5) : " + (selectedStars || "non renseignée"),
-        "",
-        "Commentaire :",
-        comment.value || "(aucun commentaire)",
-        "",
-        "---",
-        "Avis envoyé depuis la page de feedback Allotrope."
-      ];
-      const body = encodeURIComponent(bodyLines.join("\n"));
-
-      const mailtoLink = `mailto:${DEST_EMAIL}?subject=${subject}&body=${body}`;
-      window.location.href = mailtoLink;
-
-      // Optionnel : reset
-      // comment.value = "";
-      // selectedStars = 0;
-      // stars.forEach(s => s.classList.remove("active"));
+      // Ensuite le formulaire est envoyé normalement à Formspree
+      // tu recevras un mail avec : ressenti, note_etoiles, commentaire
     });
   </script>
 </body>
