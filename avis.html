@@ -92,6 +92,7 @@ let selectedType = null;
 const messageInput = document.getElementById("msg");
 const smileys = document.querySelectorAll(".smiley");
 
+/* Sélection des smileys */
 smileys.forEach(el => {
   el.addEventListener("click", () => {
     smileys.forEach(s => s.classList.remove("selected"));
@@ -117,11 +118,8 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   );
   body.append("message", messageInput.value || "");
 
-  fetch(GOOGLE_SCRIPT_URL, {
-    method: "POST",
-    mode: "no-cors",
-    body: body
-  });
+  /* 🔥 ENVOI FIABLE AVANT NAVIGATION */
+  navigator.sendBeacon(GOOGLE_SCRIPT_URL, body);
 
   localStorage.setItem("avisValide", "1");
 
@@ -132,5 +130,6 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   window.location.href = "index.html";
 });
 </script>
+
 </body>
 </html>
