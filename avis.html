@@ -92,72 +92,62 @@
 </div>
 
 <script>
-const GOOGLE_REVIEW_URL = "https://g.page/r/CUGrJ6V4TpTjEAE/review";
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaS-RZJwo6h0be0NjTDy1ZSz4-7NSMXEMgDCKzYVNVmblh_5qotbN3XXL_HVhSLFygpQ/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/TON_ID/exec";
+const GOOGLE_AVIS_URL = "https://g.page/r/TON_LIEN_GOOGLE/review";
 
-const sendBtn = document.getElementById("sendBtn");
-const playBtn = document.getElementById("playBtn");
-const hint = document.getElementById("hint");
-const msg = document.getElementById("msg");
+let selectedType = null;
+const messageInput = document.getElementById("message");
 
-let selected = null;
-
-// Sélection smiley
-document.querySelectorAll(".smiley").forEach(s => {
-  s.onclick = () => {
-    document.querySelectorAll(".smiley").forEach(x => x.classList.remove("selected"));
-    s.classList.add("selected");
-    selected = s.dataset.type;
-  };
+/* Sélection des smileys */
+document.querySelectorAll(".smiley-wrap").forEach(el => {
+  el.addEventListener("click", () => {
+    document.querySelectorAll(".smiley-wrap").forEach(s => s.classList.remove("selected"));
+    el.classList.add("selected");
+    selectedType = el.dataset.type;
+  });
 });
 
-// Affichage bouton après retour Google (Safari compris)
-function restoreState() {
-  if (localStorage.getItem("googleAvisOuvert") === "1") {
-    playBtn.style.display = "block";
-    sendBtn.style.display = "none";
-    hint.style.display = "block";
-  }
-}
-window.addEventListener("pageshow", restoreState);
-restoreState();
-
-// Validation avis
-sendBtn.onclick = () => {
-  if (!selected) {
-    alert("Merci de choisir un smiley.");
+/* Envoi de l'avis */
+document.getElementById("sendBtn").addEventListener("click", () => {
+  if (!selectedType) {
+    alert("Merci de sélectionner un smiley.");
     return;
   }
 
-  // 😀 → Google Avis
-  if (selected === "good") {
-    localStorage.setItem("googleAvisOuvert", "1");
-    window.open(GOOGLE_REVIEW_URL, "_blank");
-    restoreState();
+  if (!messageInput.value.trim()) {
+    alert("Merci de laisser un message.");
     return;
   }
 
-  // 😡 / 😐 → envoi mail (form-urlencoded, fiable)
   const body = new URLSearchParams();
-  body.append("ressenti", selected === "bad" ? "Pas content" : "Moyennement content");
-  body.append("message", msg.value || "(aucun message)");
+  body.append(
+    "ressenti",
+    selectedType === "bad"
+      ? "Pas content"
+      : selectedType === "neutral"
+      ? "Moyennement content"
+      : "Content"
+  );
+  body.append("message", messageInput.value);
 
+  // 🔥 ENVOI GARANTI DU POST (CORS SAFE)
   fetch(GOOGLE_SCRIPT_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-    body: body.toString()
+    mode: "no-cors",
+    body: body
   });
 
+  // 🔓 Débloque le jeu
   localStorage.setItem("avisValide", "1");
-  window.location.href = "index.html";
-};
 
-// Bouton après Google
-playBtn.onclick = () => {
-  localStorage.removeItem("googleAvisOuvert");
-  localStorage.setItem("avisValide", "1");
+  // 😀 Ouvre Google Avis si smiley positif
+  if (selectedType === "good") {
+    window.open(GOOGLE_AVIS_URL, "_blank");
+  }
+
+  // ➜ Retour au jeu
   window.location.href = "index.html";
-};
+});
 </script>
 </body>
 </html>
