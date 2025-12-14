@@ -58,13 +58,11 @@
       transform: scale(1.2);
     }
 
-    .smiley-wrap.bad { background: #d9534f; }
-    .smiley-wrap.medium { background: #f0ad4e; }
-    .smiley-wrap.good { background: #5cb85c; }
+    .bad { background: #d9534f; }
+    .medium { background: #f0ad4e; }
+    .good { background: #5cb85c; }
 
-    .smiley {
-      font-size: 2rem;
-    }
+    .smiley { font-size: 2rem; }
 
     textarea {
       width: 100%;
@@ -75,7 +73,6 @@
       font-size: 0.95rem;
       margin-bottom: 14px;
       resize: vertical;
-      box-sizing: border-box;
     }
 
     button {
@@ -88,7 +85,7 @@
       cursor: pointer;
       background: #f5c242;
       color: #111;
-      box-shadow: 0 6px 18px rgba(245, 194, 66, 0.5);
+      box-shadow: 0 6px 18px rgba(245,194,66,.5);
     }
   </style>
 </head>
@@ -98,71 +95,78 @@
     <h1>Votre avis compte</h1>
 
     <div class="smileys">
-      <div class="smiley-wrap bad" data-type="bad"><span class="smiley">😡</span></div>
-      <div class="smiley-wrap medium" data-type="medium"><span class="smiley">😐</span></div>
-      <div class="smiley-wrap good" data-type="good"><span class="smiley">😀</span></div>
+      <div class="smiley-wrap bad" data-type="bad">😡</div>
+      <div class="smiley-wrap medium" data-type="medium">😐</div>
+      <div class="smiley-wrap good" data-type="good">😀</div>
     </div>
 
     <textarea id="message" placeholder="Dites-nous ce que vous en pensez..."></textarea>
 
-    <!-- TYPE BUTTON = aucun submit possible -->
     <button type="button" id="sendBtn">Envoyer mon avis</button>
   </div>
 
-  <script>
-    const GOOGLE_SCRIPT_URL =
-      "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
+<script>
+  const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbxL_4FCgURHX5C5Wc2ORvrN_sjsE9Uh89MexRkD2GtJZ58gy7jPXu_PMl-teOfr3AFczw/exec";
 
-    const GOOGLE_REVIEW_URL =
-      "https://g.page/r/CUGrJ6V4TpTjEAE/review";
+  const GOOGLE_REVIEW_URL =
+    "https://g.page/r/CUGrJ6V4TpTjEAE/review";
 
-    const ROULETTE_URL = "index.html";
+  const ROULETTE_URL = "index.html";
 
-    let selectedType = null;
+  let selectedType = null;
 
-    const wraps = document.querySelectorAll(".smiley-wrap");
-    const message = document.getElementById("message");
-    const sendBtn = document.getElementById("sendBtn");
+  const wraps = document.querySelectorAll(".smiley-wrap");
+  const message = document.getElementById("message");
+  const sendBtn = document.getElementById("sendBtn");
 
-    wraps.forEach(wrap => {
-      wrap.addEventListener("click", () => {
-        wraps.forEach(w => w.classList.remove("selected"));
-        wrap.classList.add("selected");
-        selectedType = wrap.dataset.type;
-      });
+  wraps.forEach(wrap => {
+    wrap.addEventListener("click", () => {
+      wraps.forEach(w => w.classList.remove("selected"));
+      wrap.classList.add("selected");
+      selectedType = wrap.dataset.type;
+    });
+  });
+
+  sendBtn.addEventListener("click", () => {
+    if (!selectedType) {
+      alert("Merci de sélectionner un smiley.");
+      return;
+    }
+
+    // 😀 Google avis obligatoire
+    if (selectedType === "good") {
+      localStorage.setItem("avisGoogleEnCours", "1");
+      window.location.href = GOOGLE_REVIEW_URL;
+      return;
+    }
+
+    // 😡 / 😐 avis interne obligatoire
+    if (!message.value.trim()) {
+      alert("Merci de laisser un message.");
+      return;
+    }
+
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ressenti: selectedType === "bad" ? "Pas content" : "Moyennement content",
+        message: message.value
+      })
     });
 
-    sendBtn.addEventListener("click", (event) => {
-      event.preventDefault(); // 🔒 sécurité totale
+    alert("Merci pour votre retour 🙏 Accès au jeu débloqué 🎁");
+    window.location.href = ROULETTE_URL;
+  });
 
-      if (!selectedType) {
-        alert("Merci de sélectionner un smiley.");
-        return;
-      }
-
-      if (selectedType === "good") {
-        window.location.href = GOOGLE_REVIEW_URL;
-        return;
-      }
-
-      if (!message.value.trim()) {
-        alert("Merci de laisser un message.");
-        return;
-      }
-
-      fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ressenti: selectedType === "bad" ? "Pas content" : "Moyennement content",
-          message: message.value
-        })
-      });
-
-      alert("Merci pour votre retour 🙏");
-      window.location.href = ROULETTE_URL;
-    });
-  </script>
+  // 🔐 Retour depuis Google Avis = déblocage du jeu
+  if (localStorage.getItem("avisGoogleEnCours")) {
+    localStorage.removeItem("avisGoogleEnCours");
+    alert("Merci pour votre avis 🙏 Accès au jeu débloqué 🎁");
+    window.location.href = ROULETTE_URL;
+  }
+</script>
 </body>
 </html>
