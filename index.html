@@ -14,89 +14,112 @@
       justify-content: center;
       min-height: 100vh;
       margin: 0;
+      padding: 18px;
+      box-sizing: border-box;
     }
+
     .container {
       background: #181818;
-      border-radius: 18px;
-      padding: 20px;
-      max-width: 420px;
+      border-radius: 22px;
+      padding: 22px 18px 18px;
+      max-width: 520px;
       width: 100%;
       text-align: center;
+      box-shadow: 0 18px 45px rgba(0,0,0,.55);
     }
-    canvas {
-      display: block;
-      margin: 0 auto;
-      border-radius: 50%;
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: 1.8rem;
+      font-weight: 750;
     }
+
     .pointer {
       width: 0;
       height: 0;
       border-left: 14px solid transparent;
       border-right: 14px solid transparent;
       border-bottom: 24px solid #f5c242;
-      margin: 10px auto;
+      margin: 8px auto 10px;
     }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      border-radius: 50%;
+      background: #111;
+    }
+
     button {
-      margin-top: 14px;
-      padding: 14px;
+      margin-top: 16px;
+      padding: 16px;
       width: 100%;
       border-radius: 999px;
       border: none;
-      font-weight: 600;
-      background: #f5c242;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 18px;
-      padding: 14px;
-      border-radius: 14px;
-      background: #111;
-      color: #f5c242;
       font-weight: 700;
-      font-size: 1.1rem;
-      display: none;
+      background: #f5c242;
+      color: #111;
+      cursor: pointer;
+      font-size: 1.05rem;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ✅ Texte du gain sous la roue */
+    #gainText {
+      margin: 16px 0 0;
+      font-size: 1.05rem;
+      font-weight: 650;
+      color: #f5c242;
+      display: none; /* caché tant qu'on n'a pas gagné */
+      line-height: 1.35;
+    }
+
+    #gainText strong {
+      color: #fff;
+      font-weight: 800;
     }
   </style>
 </head>
 
 <body>
-<div class="container">
-  <h2>Roue 100% gagnante</h2>
+  <div class="container">
+    <h1>Roue 100% gagnante</h1>
 
-  <div class="pointer"></div>
-  <canvas id="wheel" width="300" height="300"></canvas>
+    <div class="pointer"></div>
+    <canvas id="wheel" width="320" height="320"></canvas>
 
-  <button id="spinBtn">Lancer la roue</button>
+    <!-- ✅ Texte du gain ici -->
+    <p id="gainText"></p>
 
-  <!-- 🎉 Résultat affiché ici -->
-  <div id="result"></div>
-</div>
+    <button id="spinBtn" type="button">Lancer la roue</button>
+  </div>
 
 <script>
 /* =============================
    CONFIG
 ============================= */
 const CONSIGNES_URL = "consignes.html";
+
 const wheel = document.getElementById("wheel");
 const ctx = wheel.getContext("2d");
 const spinBtn = document.getElementById("spinBtn");
-const resultBox = document.getElementById("result");
+const gainText = document.getElementById("gainText");
 
 const prizes = [
+  "Shot offert",
   "Tiramisu",
   "Panna cotta",
   "Cocktail du moment",
   "Verre de vin",
   "Bière 25cl",
-  "-10% sur la note",
-  "Shot offert"
+  "-10% sur la note"
 ];
 
-const colors = [
-  "#f5c242","#f28e2b","#e15759",
-  "#76b7b2","#59a14f","#edc948","#af7aa1"
-];
-
+const colors = ["#a67bb0", "#f5c242", "#f28e2b", "#e15759", "#8fbfbf", "#6aa25c", "#f2d36a"];
 const slice = (2 * Math.PI) / prizes.length;
 
 let angle = 0;
@@ -106,53 +129,64 @@ let spinning = false;
    DESSIN ROUE
 ============================= */
 function draw() {
-  ctx.clearRect(0,0,300,300);
+  const w = wheel.width;
+  const h = wheel.height;
+  const r = w / 2;
+
+  ctx.clearRect(0, 0, w, h);
   ctx.save();
-  ctx.translate(150,150);
+  ctx.translate(r, r);
   ctx.rotate(angle);
 
   for (let i = 0; i < prizes.length; i++) {
     ctx.beginPath();
     ctx.moveTo(0,0);
-    ctx.arc(0,0,150,i*slice,(i+1)*slice);
-    ctx.fillStyle = colors[i];
+    ctx.arc(0,0,r, i*slice, (i+1)*slice);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
     ctx.fill();
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     ctx.save();
     ctx.rotate(i*slice + slice/2);
-    ctx.translate(90,0);
+    ctx.translate(r * 0.62, 0);
     ctx.rotate(Math.PI/2);
     ctx.fillStyle = "#111";
-    ctx.font = "bold 12px system-ui";
-    ctx.fillText(prizes[i], -ctx.measureText(prizes[i]).width/2, 0);
+    ctx.font = "700 14px system-ui";
+    const text = prizes[i];
+    ctx.fillText(text, -ctx.measureText(text).width/2, 0);
     ctx.restore();
   }
+
   ctx.restore();
 }
 
 draw();
 
 /* =============================
-   SPIN AVEC AFFICHAGE DU GAIN
+   SPIN + AFFICHAGE TEXTE
 ============================= */
-spinBtn.onclick = () => {
+spinBtn.addEventListener("click", () => {
   if (spinning) return;
 
-  // Avant avis → consignes
+  // 1er clic sans avis => consignes (comme tu le veux)
   if (!localStorage.getItem("avisValide")) {
     window.location.href = CONSIGNES_URL;
     return;
   }
 
-  localStorage.removeItem("avisValide");
+  // Après avis => jeu
+  localStorage.removeItem("avisValide"); // 1 avis = 1 partie
   spinning = true;
   spinBtn.disabled = true;
 
-  // Cache l'ancien résultat
-  resultBox.style.display = "none";
+  // cache le texte du gain si un ancien gain existe
+  gainText.style.display = "none";
+  gainText.textContent = "";
 
-  // 🎯 Gain choisi
+  // 🎯 On choisit le gain et on calcule l'angle d'arrêt
   const winningIndex = Math.floor(Math.random() * prizes.length);
   const winningPrize = prizes[winningIndex];
 
@@ -164,6 +198,7 @@ spinBtn.onclick = () => {
 
   const startAngle = angle;
   const delta = targetAngle - startAngle;
+
   const start = performance.now();
   const duration = 4200;
 
@@ -179,18 +214,16 @@ spinBtn.onclick = () => {
       spinning = false;
       spinBtn.disabled = false;
 
-      // 🎉 AFFICHAGE DU GAIN SUR LA PAGE
-      resultBox.innerHTML =
-        "🎉 Félicitations, vous avez gagné :<br><strong>" +
-        winningPrize +
-        "</strong>";
+      // ✅ Texte exact demandé, sous la roue
+      gainText.innerHTML =
+        'Félicitations, vous avez gagné : <strong>' + winningPrize + '</strong>';
 
-      resultBox.style.display = "block";
+      gainText.style.display = "block";
     }
   }
 
   requestAnimationFrame(animate);
-};
+});
 </script>
 </body>
 </html>
