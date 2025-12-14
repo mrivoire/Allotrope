@@ -60,9 +60,7 @@
       color: #111;
       font-weight: 600;
       box-shadow: 0 6px 16px rgba(245, 194, 66, 0.5);
-      transition: opacity .2s ease;
     }
-    button:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
     .details {
       margin-top: 10px;
       font-size: 0.8rem;
@@ -80,7 +78,7 @@
     <div class="pointer"></div>
     <canvas id="wheelCanvas" width="320" height="320"></canvas>
 
-    <button id="spinBtn" type="button">Lancer la roue</button>
+    <button id="spinBtn">Lancer la roue</button>
 
     <div class="details">
       Clique sur <span class="highlight">Lancer la roue</span> pour découvrir ton gain 🎁
@@ -88,134 +86,110 @@
   </div>
 
 <script>
-  /* =========================================================
-     CONFIG
-     ========================================================= */
-  // ✅ Ta page de consignes (on la garde)
-  const CONSIGNES_URL = "https://mrivoire.github.io/Allotrope/consignes.html";
+/* ===============================
+   🔐 CONTRÔLE D'ACCÈS AU JEU
+   =============================== */
+const hasAccess = localStorage.getItem("avisValide");
 
-  const canvas = document.getElementById("wheelCanvas");
-  const ctx = canvas.getContext("2d");
-  const size = canvas.width;
-  const radius = size / 2;
-  const spinBtn = document.getElementById("spinBtn");
+// Debug utile : tu peux le retirer après
+console.log("avisValide =", hasAccess);
 
-  const prizes = [
-    "Tiramisu",
-    "Panna cotta",
-    "Cocktail du moment",
-    "Verre de vin 12 cl",
-    "Bière 25 cl",
-    "-10% sur la note",
-    "Un shot offert"
-  ];
+if (!hasAccess) {
+  // Aucun avis validé → on renvoie vers la page d'avis (pas consignes)
+  window.location.href = "avis.html";
+}
 
-  const colors = ["#f5c242","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#af7aa1"];
-  const sliceAngle = (2 * Math.PI) / prizes.length;
+/* ===============================
+   🎨 DESSIN DE LA ROUE
+   =============================== */
+const canvas = document.getElementById("wheelCanvas");
+const ctx = canvas.getContext("2d");
+const size = canvas.width;
+const radius = size / 2;
 
-  let currentAngle = 0;
-  let isSpinning = false;
+const prizes = [
+  "Tiramisu", "Panna cotta", "Cocktail du moment",
+  "Verre de vin 12 cl", "Bière 25 cl", "-10% sur la note", "Un shot offert"
+];
 
-  /* =========================================================
-     DESSIN DE LA ROUE
-     ========================================================= */
-  function drawWheel(angle = 0) {
-    ctx.clearRect(0, 0, size, size);
+const colors = [
+  "#f5c242","#f28e2b","#e15759",
+  "#76b7b2","#59a14f","#edc948","#af7aa1"
+];
+
+const sliceAngle = (2 * Math.PI) / prizes.length;
+let currentAngle = 0;
+let isSpinning = false;
+
+function drawWheel(angle = 0) {
+  ctx.clearRect(0,0,size,size);
+  ctx.save();
+  ctx.translate(radius, radius);
+  ctx.rotate(angle);
+
+  for (let i = 0; i < prizes.length; i++) {
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.arc(0,0,radius-4,i*sliceAngle,(i+1)*sliceAngle);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = "#111";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
     ctx.save();
-    ctx.translate(radius, radius);
-    ctx.rotate(angle);
-
-    for (let i = 0; i < prizes.length; i++) {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, radius - 4, i * sliceAngle, (i + 1) * sliceAngle);
-      ctx.closePath();
-      ctx.fillStyle = colors[i % colors.length];
-      ctx.fill();
-      ctx.strokeStyle = "#111";
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      ctx.save();
-      ctx.fillStyle = "#111";
-      ctx.font = "bold 13px system-ui, sans-serif";
-      ctx.rotate(i * sliceAngle + sliceAngle / 2);
-      ctx.translate(radius * 0.68, 0);
-      ctx.rotate(Math.PI / 2);
-      const text = prizes[i];
-      ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
-      ctx.restore();
-    }
-
+    ctx.fillStyle = "#111";
+    ctx.font = "bold 13px system-ui, sans-serif";
+    ctx.rotate(i*sliceAngle + sliceAngle/2);
+    ctx.translate(radius*0.68,0);
+    ctx.rotate(Math.PI/2);
+    const text = prizes[i];
+    ctx.fillText(text, -ctx.measureText(text).width/2, 0);
     ctx.restore();
   }
+  ctx.restore();
+}
 
-  drawWheel(currentAngle);
+drawWheel();
 
-  /* =========================================================
-     SPIN (la roue tourne)
-     ========================================================= */
-  function spinToIndex(prizeIndex) {
-    isSpinning = true;
-    spinBtn.disabled = true;
+/* ===============================
+   🎰 LANCEMENT DE LA ROUE
+   =============================== */
+document.getElementById("spinBtn").addEventListener("click", () => {
+  if (isSpinning) return;
 
-    const extraTurns = 6;
-    const finalSliceCenter = prizeIndex * sliceAngle + sliceAngle / 2;
-    const targetAngle =
-      extraTurns * 2 * Math.PI + (3 * Math.PI) / 2 - finalSliceCenter;
-
-    const startAngle = currentAngle;
-    const diff = targetAngle - startAngle;
-    const start = performance.now();
-    const duration = 4200;
-
-    function animate(t) {
-      const p = Math.min((t - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - p, 3);
-      currentAngle = startAngle + diff * eased;
-      drawWheel(currentAngle);
-
-      if (p < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        isSpinning = false;
-        spinBtn.disabled = false;
-
-        const gain = prizes[prizeIndex];
-        alert("🎉 Tu as gagné : " + gain + "\nMontre ton écran au staff pour récupérer ton gain.");
-      }
-    }
-
-    requestAnimationFrame(animate);
+  // Si pour une raison quelconque l'accès a disparu, on rebloque
+  if (!localStorage.getItem("avisValide")) {
+    alert("Merci de laisser un avis avant de jouer.");
+    window.location.href = "avis.html";
+    return;
   }
 
-  function pickPrizeIndex() {
-    // Tirage simple (segments égaux visuellement)
-    return Math.floor(Math.random() * prizes.length);
+  // ⛔ Consomme le droit de jouer (1 avis = 1 partie)
+  localStorage.removeItem("avisValide");
+
+  isSpinning = true;
+  const targetRotation = (Math.random() * 5 + 5) * 2 * Math.PI;
+  const start = performance.now();
+  const duration = 4000;
+
+  function animate(time) {
+    const progress = Math.min((time - start) / duration, 1);
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    currentAngle = easeOut * targetRotation;
+    drawWheel(currentAngle);
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      isSpinning = false;
+      alert("🎉 Félicitations ! Montre ton écran au staff pour récupérer ton gain.");
+    }
   }
 
-  /* =========================================================
-     ✅ LOGIQUE EXACTE QUE TU DEMANDES
-     - 1er clic : pas d'avis -> consignes
-     - après avis : avisValide=1 -> la roue tourne
-     ========================================================= */
-  spinBtn.addEventListener("click", () => {
-    if (isSpinning) return;
-
-    const avisValide = localStorage.getItem("avisValide");
-
-    // Cas 1 : pas encore d'avis => consignes (comme tu veux)
-    if (!avisValide) {
-      window.location.href = CONSIGNES_URL;
-      return;
-    }
-
-    // Cas 2 : avis validé => on joue (et on consomme)
-    localStorage.removeItem("avisValide"); // 1 avis = 1 partie
-
-    const idx = pickPrizeIndex();
-    spinToIndex(idx);
-  });
+  requestAnimationFrame(animate);
+});
 </script>
 </body>
 </html>
